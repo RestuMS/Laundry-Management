@@ -40,9 +40,10 @@ class SettingController extends Controller
             'store_address' => 'required|string',
             'store_phone' => 'required|string|max:20',
             'receipt_footer' => 'nullable|string',
+            'fonnte_token' => 'nullable|string',
         ]);
 
-        $keys = ['store_name', 'store_address', 'store_phone', 'receipt_footer'];
+        $keys = ['store_name', 'store_address', 'store_phone', 'receipt_footer', 'fonnte_token'];
 
         foreach ($keys as $key) {
             Setting::updateOrCreate(

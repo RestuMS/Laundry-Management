@@ -286,8 +286,7 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        min: 3,
-                        max: 11,
+                        suggestedMin: 0,
                         ticks: {
                             stepSize: 1,
                             callback: function(value) {

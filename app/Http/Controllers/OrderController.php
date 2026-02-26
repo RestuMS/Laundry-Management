@@ -8,6 +8,7 @@ use App\Models\Order;
 
 use App\Models\Service;
 use App\Models\Customer;
+use App\Models\Inventory;
 use App\Services\WhatsappNotificationService;
 
 class OrderController extends Controller
@@ -73,6 +74,15 @@ class OrderController extends Controller
 
         app(WhatsappNotificationService::class)->sendTrackingUpdate($order);
 
+        // Deduct inventory items that have a usage logic
+        if ($request->weight && $request->weight > 0) {
+            $inventories = Inventory::where('usage_per_kg', '>', 0)->get();
+            foreach ($inventories as $inv) {
+                $inv->stock = max(0, $inv->stock - ($inv->usage_per_kg * $request->weight));
+                $inv->save();
+            }
+        }
+
         return redirect()->route('order.index')->with('success', 'Order berhasil ditambahkan! Notifikasi WhatsApp otomatis dikirim.');
     }
 
@@ -129,6 +139,17 @@ class OrderController extends Controller
     public function invoice(Order $order)
     {
         return view('dashboard.order_invoice', compact('order'));
+    }
+
+    public function sendInvoiceWa(Order $order)
+    {
+        $sent = app(WhatsappNotificationService::class)->sendInvoice($order);
+
+        if ($sent) {
+            return redirect()->back()->with('success', 'Berhasil! Tagihan Invoice WhatsApp telah dikirim ke nomor pelanggan melalui Gateway.');
+        } else {
+            return redirect()->back()->with('error', 'Gagal kirim WA! Pastikan nomor pelanggan valid atau FONNTE_TOKEN sudah terpasang di .env/pengaturan.');
+        }
     }
 
     public function destroy(Order $order)

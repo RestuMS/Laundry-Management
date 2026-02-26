@@ -44,12 +44,21 @@ Route::middleware('auth')->group(function () {
     // Admin & Owner Shared
     Route::middleware('role:admin,owner')->group(function () {
         Route::get('/laporan', [\App\Http\Controllers\ReportController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan/export/pdf', [\App\Http\Controllers\ReportController::class, 'exportPdf'])->name('laporan.export.pdf');
+        Route::get('/laporan/export/excel', [\App\Http\Controllers\ReportController::class, 'exportExcel'])->name('laporan.export.excel');
     });
 
     // Admin & Kasir Shared
     Route::middleware('role:admin,kasir')->group(function () {
+        // Expenses (Pengeluaran)
+        Route::resource('pengeluaran', \App\Http\Controllers\ExpenseController::class)->only(['index', 'store', 'destroy'])->names('expense');
+        
+        // Inventory (Bahan Baku)
+        Route::resource('inventaris', \App\Http\Controllers\InventoryController::class)->only(['index', 'store', 'update', 'destroy'])->names('inventory');
+
         Route::get('order/{order}/invoice', [\App\Http\Controllers\OrderController::class, 'invoice'])->name('order.invoice');
         Route::patch('order/{order}/status', [\App\Http\Controllers\OrderController::class, 'updateStatus'])->name('order.update_status');
+        Route::post('order/{order}/send-wa-invoice', [\App\Http\Controllers\OrderController::class, 'sendInvoiceWa'])->name('order.send_wa_invoice');
         Route::resource('order', \App\Http\Controllers\OrderController::class);
         
         Route::resource('pelanggan', \App\Http\Controllers\CustomerController::class)->names('pelanggan');

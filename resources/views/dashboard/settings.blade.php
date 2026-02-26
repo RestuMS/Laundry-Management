@@ -95,6 +95,17 @@
                             placeholder="Contoh: Barang yang tidak diambil setelah 1 bulan di luar tanggung jawab kami."
                             class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary placeholder-slate-400 text-[14px] font-medium text-slate-700 transition-all shadow-sm outline-none">
                     </div>
+
+                    <!-- Fonnte Token (WA Gateway) -->
+                    <div class="space-y-2 md:col-span-2 mt-2 pt-6 border-t border-slate-100">
+                        <label class="block text-[13px] font-bold text-slate-700 flex items-center gap-2">
+                            Token API Fonnte (WhatsApp Gateway) <span class="bg-indigo-100 text-indigo-600 text-[10px] px-2 py-0.5 rounded-full">Baru</span>
+                        </label>
+                        <input type="text" name="fonnte_token" value="{{ old('fonnte_token', $settings['fonnte_token'] ?? '') }}"
+                            placeholder="Masukkan Kunci API dari fonnte.com untuk notifikasi tagihan otomatis"
+                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary placeholder-slate-400 text-[14px] font-medium text-slate-700 transition-all shadow-sm outline-none">
+                        <p class="text-[11px] text-slate-500 font-medium mt-1">Gunakan token ini untuk mengaktifkan notifikasi resi tagihan otomatis melalui Bot WhatsApp Server.</p>
+                    </div>
                 </div>
             </div>
 

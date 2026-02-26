@@ -176,13 +176,28 @@ td {
                                 
                                 <!-- WA Button -->
                                 @php
-                                    $phone = $order->customer_phone ? preg_replace('/^08/', '+628', $order->customer_phone) : null;
-                                    $msg = "Halo Kak {$order->customer_name}, %0A%0AIni adalah bukti transaksi laundry Kakak di Laundry Pro. %0A%0ATrx: *{$order->order_code}* %0ATotal: *Rp " . number_format($order->total_price, 0, ',', '.') . "* %0AStatus Pembayaran: *{$order->payment_status}* %0A%0ATerima kasih!";
-                                    $waLink = $phone ? "https://wa.me/{$phone}?text={$msg}" : "javascript:alert('Nomor HP pelanggan tidak tersedia')";
+                                    $hasFonnteApi = !empty(env('FONNTE_TOKEN', \App\Models\Setting::where('key', 'fonnte_token')->value('value')));
                                 @endphp
-                                <a href="{{ $waLink }}" target="_blank" class="w-10 h-10 rounded-xl bg-green-50 border border-green-200 text-green-500 hover:bg-green-500 hover:text-white transition-all flex items-center justify-center shadow-sm" title="Kirim WA">
-                                    <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                                </a>
+                                
+                                @if($hasFonnteApi)
+                                    <!-- WA API Auto Send Button -->
+                                    <form action="{{ route('order.send_wa_invoice', $order->id) }}" method="POST" class="inline-block m-0 p-0">
+                                        @csrf
+                                        <button type="submit" onclick="return confirm('Kirim Notifikasi Invoice Tagihan ke WA Pelanggan menggunakan Sistem Otomatis sekarang?')" class="w-10 h-10 rounded-xl bg-green-50 border border-green-200 text-green-500 hover:bg-green-500 hover:text-white transition-all flex items-center justify-center shadow-sm" title="Kirim Tagihan (WA API Otomatis)">
+                                            <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                        </button>
+                                    </form>
+                                @else
+                                    <!-- Manual WA Web / App Fallback -->
+                                    @php
+                                        $phone = $order->customer_phone ? preg_replace('/^08/', '+628', $order->customer_phone) : null;
+                                        $msg = "Halo Kak {$order->customer_name}, %0A%0ATerima kasih telah mencuci di Laundry Pro. Berikut ringkasan pesanan anda: %0A%0A🧾 *NO TRX:* {$order->order_code} %0A👕 *LAYANAN:* {$order->service_name} %0A💰 *TOTAL:* Rp " . number_format($order->total_price, 0, ',', '.') . " %0A💳 *STATUS BAYAR:* {$order->payment_status} %0A📦 *STATUS BARANG:* {$order->status} %0A%0AKakak bisa memantau cucian secara realtime di link berikut: %0A" . url('/track?q=' . $order->order_code);
+                                        $waLink = $phone ? "https://wa.me/{$phone}?text={$msg}" : "javascript:alert('Nomor HP pelanggan tidak tersedia')";
+                                    @endphp
+                                    <a href="{{ $waLink }}" target="_blank" class="w-10 h-10 rounded-xl bg-green-50 border border-green-200 text-green-500 hover:bg-green-500 hover:text-white transition-all flex items-center justify-center shadow-sm" title="Kirim WA (Buka WA Web)">
+                                        <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                    </a>
+                                @endif
 
                                 <!-- Edit -->
                                 <a href="{{ route('order.edit', $order->id) }}" class="w-10 h-10 rounded-xl bg-[#F0F5FF] border border-[#4F8EF7]/30 text-[#4F8EF7] hover:bg-[#4F8EF7] hover:text-white transition-all font-semibold flex items-center justify-center shadow-sm text-[13.5px]">

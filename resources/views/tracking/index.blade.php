@@ -93,7 +93,7 @@
         <!-- Header -->
         <div class="text-center mb-10 mt-6 max-w-2xl mx-auto w-full" x-show="!result" x-transition.duration.700ms>
             <div class="inline-flex items-center justify-center p-4 bg-white/50 rounded-2xl shadow-sm mb-6 border border-white backdrop-blur-md">
-                <img src="{{ asset('images/icon.png') }}" alt="Logo" class="w-12 h-12 object-contain mr-3">
+                <img src="https://ui-avatars.com/api/?name=Washup+Laundry&background=2563EB&color=fff&rounded=true&bold=true&size=128" alt="Logo" class="w-12 h-12 object-contain mr-3 rounded-full shadow-md shadow-blue-500/20">
                 <h1 class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">{{ $globalSettings['store_name'] ?? 'LaundryPro' }}</h1>
             </div>
             <h2 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight leading-tight">Lacak Status Pakaian Anda Secara Real-time</h2>
@@ -137,76 +137,86 @@
 
         <!-- Result Card -->
         <template x-if="result">
-            <div class="w-full max-w-3xl glass-panel rounded-[32px] p-0 md:p-2 mt-2 shadow-2xl relative overflow-hidden" x-transition.duration.700ms.scale.95>
+            <div class="w-full max-w-4xl bg-white rounded-[32px] p-0 mt-2 shadow-2xl relative overflow-hidden ring-1 ring-slate-100" x-transition.duration.700ms.scale.95>
                 
-                <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-bl-[100px] -z-10"></div>
+                <!-- Background decorative element for top right -->
+                <div class="absolute top-0 right-0 w-2/5 h-64 bg-[#F2F8FF] rounded-bl-[80px] z-0"></div>
 
-                <div class="p-6 md:p-8">
+                <div class="p-8 md:p-12 relative z-10">
                     <!-- Head Details -->
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                    <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-12">
                         <div class="flex items-center gap-5">
-                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+                            <div class="w-[72px] h-[72px] rounded-[24px] bg-[#3B82F6] text-white flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
                                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                             </div>
                             <div>
-                                <p class="text-[12px] font-bold tracking-wider text-slate-400 uppercase mb-1">Kode Order</p>
-                                <h3 class="text-2xl font-black text-slate-800 tracking-tight" x-text="result.order_code"></h3>
-                                <p class="text-[14px] font-semibold text-primary mt-1 flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg> <span x-text="result.customer_name"></span></p>
+                                <p class="text-[12px] font-black tracking-widest text-[#94A3B8] uppercase mb-1">KODE ORDER</p>
+                                <h3 class="text-[28px] font-black text-[#1E293B] tracking-tight leading-none mb-2" x-text="result.order_code"></h3>
+                                <p class="text-[15px] font-bold text-[#3B82F6] flex items-center gap-1.5 cursor-default">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg> 
+                                    <span x-text="result.customer_name"></span>
+                                </p>
                             </div>
                         </div>
-                        <div class="text-left md:text-right bg-white/60 p-4 rounded-2xl border border-white w-full md:w-auto">
-                            <p class="text-[12px] font-bold text-slate-400 uppercase mb-1">Estimasi Selesai</p>
-                            <p class="text-[16px] font-bold text-slate-800" x-text="result.estimated_finish || 'Menunggu Penilaian'"></p>
+                        <div class="text-left md:text-center bg-white p-5 rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full md:w-auto mt-4 md:mt-0 z-10 border border-[#F1F5F9]">
+                            <p class="text-[11px] font-black text-[#94A3B8] uppercase tracking-widest mb-1">ESTIMASI SELESAI</p>
+                            <p class="text-[18px] font-black text-[#1E293B]" x-text="result.estimated_finish || 'Menunggu Penilaian'"></p>
                         </div>
                     </div>
 
-                    <!-- Workflow Timeline 3D -->
-                    <div class="mb-12 bg-white/40 p-6 md:p-8 rounded-[24px] border border-white">
-                        <h4 class="text-[14px] font-bold text-slate-800 mb-8 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <!-- Workflow Timeline -->
+                    <div class="mb-12 mt-6">
+                        <h4 class="text-[16px] font-bold text-[#1E293B] mb-12 flex items-center gap-2">
+                            <svg class="w-[22px] h-[22px] text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                             Status Pengerjaan
                         </h4>
                         
-                        <div class="relative w-full max-w-4xl mx-auto py-2">
+                        <div class="relative w-full mx-auto pb-4">
                             <!-- Progress Line Background -->
-                            <div class="absolute top-[22px] left-[10%] right-[10%] h-1.5 bg-slate-200 rounded-full z-0"></div>
+                            <div class="absolute top-[28px] left-[7%] right-[7%] h-[5px] bg-[#E2E8F0] z-0 rounded-full"></div>
                             
                             <!-- Active Progress Line -->
-                            <div class="absolute top-[22px] left-[10%] h-1.5 progress-line-active rounded-full z-0 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(37,99,235,0.5)]" :style="`width: ${calculateProgressWidth()}%`"></div>
+                            <div class="absolute top-[28px] left-[7%] h-[5px] bg-[#3B82F6] z-0 transition-all duration-1000 ease-out rounded-full shadow-[0_0_12px_rgba(59,130,246,0.6)]" :style="`width: ${calculateProgressWidth()}%`"></div>
 
                             <div class="relative z-10 flex justify-between">
                                 <template x-for="(status, index) in statuses" :key="index">
-                                    <div class="flex flex-col items-center group w-1/5 relative">
+                                    <div class="flex flex-col items-center group relative z-10 w-[70px] sm:w-[14.28%]">
                                         
                                         <!-- Node dot -->
-                                        <div class="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-500 mb-3 border-4"
-                                             :class="(index <= getCurrentStatusIndex()) ? getNodeBgClass(index) + ' border-white transform scale-110 shadow-blue-500/20 ' + (index === getCurrentStatusIndex() && result.status !== 'Diambil' ? 'animate-pulse-glow z-20' : 'z-10') : 'bg-slate-100 border-white text-slate-300 z-10'">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" :d="status.icon"></path></svg>
+                                        <div class="relative w-[60px] h-[60px] rounded-full flex items-center justify-center transition-all duration-500 mb-3"
+                                             :class="(index <= getCurrentStatusIndex()) ? 'shadow-[0_10px_20px_-5px_rgba(59,130,246,0.4)]' : ''">
+                                             
+                                            <!-- Ring active if current -->
+                                            <div x-show="index === getCurrentStatusIndex() && result.status !== 'Diambil'" class="absolute inset-[-8px] rounded-full bg-[#EFF6FF] animate-pulse-glow z-0"></div>
+
+                                            <!-- True Circle -->
+                                            <div class="relative w-full h-full rounded-full flex items-center justify-center border-[5px] border-white z-10 transition-colors duration-500"
+                                                 :class="(index <= getCurrentStatusIndex()) ? 'bg-[#3B82F6] text-white' : 'bg-[#F8FAFC] text-[#CBD5E1] shadow-inner'">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="status.icon"></path></svg>
+                                            </div>
                                         </div>
                                         
                                         <!-- Label -->
-                                        <div class="text-[12px] font-bold text-center mt-1 transition-colors duration-300 hidden md:block"
-                                             :class="(index <= getCurrentStatusIndex()) ? 'text-slate-800' : 'text-slate-400'"
+                                        <div class="text-[13px] font-bold text-center mt-2 w-max transition-colors duration-300 hidden md:block"
+                                             :class="(index <= getCurrentStatusIndex()) ? 'text-[#1E293B]' : 'text-[#94A3B8]'"
                                              x-text="status.name"></div>
-                                        
-                                        <!-- Tooltip for Mobile & Desktop -->
-                                        <div class="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap z-30 pointer-events-none md:hidden"
+                                             
+                                        <!-- Mobile Tooltip -->
+                                        <div class="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1E293B] text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap z-30 md:hidden"
                                              x-text="status.name"></div>
                                     </div>
                                 </template>
                             </div>
                         </div>
 
-                        <!-- Current Status Text Alert -->
-                        <div class="mt-8 mx-auto max-w-lg bg-gradient-to-r p-[1.5px] rounded-xl"
-                             :class="result.status === 'Selesai' ? 'from-green-400 to-emerald-500' : (result.status === 'Diambil' ? 'from-slate-300 to-slate-400' : 'from-primary to-secondary')">
-                            <div class="bg-white rounded-xl p-4 flex items-center justify-center gap-3">
-                                <span class="relative flex h-3 w-3" x-show="result.status !== 'Diambil'">
-                                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" :class="result.status === 'Selesai' ? 'bg-emerald-400' : 'bg-blue-400'"></span>
-                                  <span class="relative inline-flex rounded-full h-3 w-3" :class="result.status === 'Selesai' ? 'bg-emerald-500' : 'bg-blue-500'"></span>
-                                </span>
-                                <p class="text-[14px] font-bold text-center" :class="result.status === 'Diambil' ? 'text-slate-600' : 'text-slate-800'">
-                                    Status saat ini: <span x-text="result.status" :class="result.status === 'Selesai' ? 'text-emerald-600 font-black' : 'text-primary'"></span>
+                        <!-- Current Status PILL -->
+                        <div class="mt-14 flex justify-center w-full">
+                            <div class="border-[2px] border-[#3B82F6] rounded-full p-1.5 flex items-center justify-center bg-white shadow-sm min-w-[300px] z-20">
+                                <div class="w-8 h-8 rounded-full bg-[#EFF6FF] flex items-center justify-center mr-3">
+                                    <div class="w-3.5 h-3.5 rounded-full bg-[#3B82F6]" :class="{'animate-pulse': result.status !== 'Diambil'}"></div>
+                                </div>
+                                <p class="text-[15px] font-bold text-[#1E293B] pr-5">
+                                    Status saat ini: <span x-text="result.status" class="text-[#3B82F6]"></span>
                                 </p>
                             </div>
                         </div>
@@ -214,25 +224,30 @@
                     </div>
 
                     <!-- Order Info Grid -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="bg-slate-50 border border-slate-100 p-4 rounded-2xl">
-                            <p class="text-[11px] font-bold text-slate-400 uppercase mb-1">Layanan</p>
-                            <p class="text-[14px] font-bold text-slate-800" x-text="result.service_name"></p>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                        <div class="bg-[#F8FAFC] p-5 rounded-[20px] ring-1 ring-slate-100">
+                            <p class="text-[11px] font-black text-[#94A3B8] uppercase tracking-widest mb-2">LAYANAN</p>
+                            <p class="text-[16px] font-black text-[#1E293B] leading-tight" x-text="result.service_name"></p>
                         </div>
-                        <div class="bg-slate-50 border border-slate-100 p-4 rounded-2xl">
-                            <p class="text-[11px] font-bold text-slate-400 uppercase mb-1">Berat / Qty</p>
-                            <p class="text-[14px] font-bold text-slate-800"><span x-text="result.weight"></span> <span class="text-[12px] text-slate-500 font-medium">Satuan</span></p>
+                        <div class="bg-[#F8FAFC] p-5 rounded-[20px] ring-1 ring-slate-100">
+                            <p class="text-[11px] font-black text-[#94A3B8] uppercase tracking-widest mb-2">BERAT / QTY</p>
+                            <p class="text-[16px] font-black text-[#1E293B]"><span x-text="parseFloat(result.weight).toFixed(2)"></span> <span class="text-[14px] text-[#64748B] font-medium">Satuan</span></p>
                         </div>
-                        <div class="bg-slate-50 border border-slate-100 p-4 rounded-2xl">
-                            <p class="text-[11px] font-bold text-slate-400 uppercase mb-1">Tanggal Masuk</p>
-                            <p class="text-[14px] font-bold text-slate-800" x-text="result.created_at"></p>
+                        <div class="bg-[#F8FAFC] p-5 rounded-[20px] ring-1 ring-slate-100">
+                            <p class="text-[11px] font-black text-[#94A3B8] uppercase tracking-widest mb-2">TANGGAL MASUK</p>
+                            <p class="text-[16px] font-black text-[#1E293B]" x-text="formatDateStr(result.created_at)"></p>
                         </div>
-                        <div class="bg-primary/5 border border-primary/20 p-4 rounded-2xl">
-                            <p class="text-[11px] font-bold text-primary opacity-80 uppercase mb-1">Total Biaya</p>
-                            <p class="text-[16px] font-black text-primary">Rp <span x-text="formatRupiah(result.total_price)"></span></p>
-                            <p class="text-[11px] font-bold mt-1 inline-block px-2 py-0.5 rounded-full"
-                               :class="result.payment_status === 'Lunas' ? 'bg-green-100 text-green-700' : (result.payment_status === 'DP' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700')"
-                               x-text="result.payment_status"></p>
+                        <div class="bg-[#F0F7FF] border border-[#E0EFFF] p-5 rounded-[20px] relative flex flex-col justify-center">
+                            <p class="text-[11px] font-black text-[#3B82F6] uppercase tracking-widest mb-1">TOTAL BIAYA</p>
+                            <p class="text-[20px] font-black text-[#3B82F6] mb-1">Rp <span x-text="formatRupiah(result.total_price)"></span></p>
+                            <div>
+                                <span class="text-[11px] font-black inline-block px-3 py-1 rounded-[8px] text-[#10B981] bg-[#D1FAE5]"
+                                      x-show="result.payment_status === 'Lunas'">Lunas</span>
+                                <span class="text-[11px] font-black inline-block px-3 py-1 rounded-[8px] text-[#F59E0B] bg-[#fef3c7]"
+                                      x-show="result.payment_status === 'DP'">DP Sebagian</span>
+                                <span class="text-[11px] font-black inline-block px-3 py-1 rounded-[8px] text-[#EF4444] bg-[#FEE2E2]"
+                                      x-show="result.payment_status === 'Belum Bayar' || result.payment_status === 'Belum Lunas'">Belum Lunas</span>
+                            </div>
                         </div>
                     </div>
                     
@@ -256,7 +271,7 @@
                 errorMsg: '',
                 result: null,
                 
-                // Defined workflow
+                // Defined workflow mimicking exact screenshot requested logic
                 statuses: [
                     { name: 'Diterima', icon: 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4' },
                     { name: 'Dicuci', icon: 'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M7 8h2' },
@@ -316,11 +331,11 @@
                     if (!this.result) return -1;
                     const dbStatus = this.result.status;
                     
-                    // Map db string to array index
+                    // Map db string to array index (7 items logic from screenshot)
                     const map = {
                         'Diterima': 0, 'Dicuci': 1, 'Dikeringkan': 2, 'Disetrika': 3,
-                        'Quality Control': 3, // Group QC with Disetrika or keep it at visual 3
-                        'Selesai': 4, 'Diambil': 5
+                        'Quality Control': 4,
+                        'Selesai': 5, 'Diambil': 6
                     };
                     
                     return map[dbStatus] !== undefined ? map[dbStatus] : 0;
@@ -330,14 +345,16 @@
                     const idx = this.getCurrentStatusIndex();
                     if (idx < 0) return 0;
                     if (idx === 0) return 0;
-                    if (idx === 5) return 100;
-                    return (idx / (this.statuses.length - 1)) * 100; // Assuming 6 items = 5 segments. 1/5 = 20%
+                    if (idx === 6) return 100;
+                    return (idx / (this.statuses.length - 1)) * 100; // 6 segments for 7 items
                 },
                 
-                getNodeBgClass(index) {
-                    if (index === 5 && this.getCurrentStatusIndex() === 5) return 'bg-slate-700 text-white border-slate-700';
-                    if (index === 4 && this.getCurrentStatusIndex() >= 4) return 'bg-emerald-500 text-white border-emerald-500';
-                    return 'bg-gradient-to-r from-primary to-secondary text-white';
+                formatDateStr(datetime) {
+                    if (!datetime) return '';
+                    const d = new Date(datetime);
+                    if (isNaN(d)) return datetime;
+                    const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+                    return d.toLocaleDateString('id-ID', options).replace(/\./g, ':');
                 },
 
                 formatRupiah(angka) {
