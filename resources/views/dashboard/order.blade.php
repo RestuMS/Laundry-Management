@@ -79,8 +79,8 @@ td {
         </div>
     </div>
 
-    <!-- Table Section -->
-    <div class="glass-container rounded-[28px] p-2 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
+    <!-- Table Section Desktop -->
+    <div class="hidden md:block glass-container rounded-[28px] p-2 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
         <div class="overflow-x-auto custom-scrollbar pb-2">
             <table class="w-full text-left whitespace-nowrap border-collapse min-w-[1000px]">
                 
@@ -117,12 +117,20 @@ td {
                             </div>
                         </td>
                         
-                        <td class="py-5 px-4">
-                            <div class="font-bold text-slate-700 block mb-1">{{ $order->service_name }}</div>
-                            <div class="text-[13px] text-slate-400 flex items-center gap-1.5">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
-                                {{ $order->weight ? $order->weight . ' Kg/Pcs' : 'Tidak ada berat' }}
-                            </div>
+                        <td class="py-5 px-4 w-[280px]">
+                            @if($order->items && $order->items->count() > 0)
+                                @foreach($order->items as $item)
+                                <div class="mb-2 last:mb-0 border-b last:border-0 border-slate-100 pb-1 last:pb-0">
+                                    <div class="font-bold text-slate-700 block text-[13px] whitespace-normal leading-tight">{{ $item->service_name }}</div>
+                                    <div class="text-[12px] text-slate-400 font-medium">
+                                        {{ $item->qty }} {{ $item->unit }} &times; {{ number_format($item->price, 0, ',', '.') }}
+                                    </div>
+                                </div>
+                                @endforeach
+                            @else
+                                <div class="font-bold text-slate-700 block mb-1">{{ $order->service_name ?? 'Layanan' }}</div>
+                                <div class="text-[13px] text-slate-400">Old Data</div>
+                            @endif
                         </td>
 
                         <td class="py-5 px-4">
@@ -155,11 +163,11 @@ td {
                             </button>
                             <br>
                             @if($order->payment_status == 'Belum Bayar' || $order->payment_status == 'Belum Lunas')
-                                <span class="text-[12px] font-bold text-red-400 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Belum Bayar</span>
+                                <button type="button" @click="openPaymentModal({{ $order->id }}, '{{ $order->payment_status }}')" class="hover:scale-105 transition-all text-[12px] font-bold text-red-500 bg-red-50 border border-red-100 px-2 py-1 rounded inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Belum Bayar</button>
                             @elseif($order->payment_status == 'DP')
-                                <span class="text-[12px] font-bold text-orange-400 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span> DP Sebagian</span>
+                                <button type="button" @click="openPaymentModal({{ $order->id }}, '{{ $order->payment_status }}')" class="hover:scale-105 transition-all text-[12px] font-bold text-orange-500 bg-orange-50 border border-orange-100 px-2 py-1 rounded inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> DP Sebagian</button>
                             @else
-                                <span class="text-[12px] font-bold text-[#10B981] inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span> Lunas Cetak</span>
+                                <button type="button" @click="openPaymentModal({{ $order->id }}, '{{ $order->payment_status }}')" class="hover:scale-105 transition-all text-[12px] font-bold text-[#10B981] bg-[#10B981]/10 border border-[#10B981]/20 px-2 py-1 rounded inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span> {{ $order->payment_status }}</button>
                             @endif
                         </td>
 
@@ -205,7 +213,7 @@ td {
                                 </a>
 
                                 <!-- Delete -->
-                                @if(Auth::user()->role === 'admin')
+                                @if(auth()->user()?->role === 'admin')
                                 <button type="button" @click="confirmDelete('{{ $order->id }}', '{{ $order->order_code }}', '{{ addslashes($order->customer_name) }}')" class="w-10 h-10 rounded-xl bg-red-50 border border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center shadow-sm">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
@@ -232,9 +240,132 @@ td {
             </table>
         </div>
 
-        <!-- Pagination -->
+    </div>
+
+    <!-- Mobile Card Section (Tampilan Khusus HP) -->
+    <div class="md:hidden flex flex-col gap-4 mb-8 custom-scrollbar">
+        @forelse($orders as $order)
+        @php
+            $colors = ['2563EB', '4F46E5', 'EC4899', '3B82F6', 'F59E0B', '8B5CF6'];
+            $bgColor = $colors[$order->id % count($colors)];
+            
+            $badgeStyle = '';
+            if($order->status == 'Diterima' || $order->status == 'Quality Control') {
+                $badgeStyle = 'bg-slate-100 text-slate-600 border border-slate-200';
+            } elseif($order->status == 'Dicuci' || $order->status == 'Dikeringkan' || $order->status == 'Disetrika' || $order->status == 'Diproses') {
+                $badgeStyle = 'bg-[#FFF4E5] text-[#F59E0B] border border-[#F59E0B]/20';
+            } elseif($order->status == 'Selesai' || $order->status == 'Diambil') {
+                $badgeStyle = 'bg-[#E6F8F0] text-[#10B981] border border-[#10B981]/20';
+            } elseif($order->status == 'Belum Diambil') {
+                $badgeStyle = 'bg-[#FEE2E2] text-[#EF4444] border border-[#EF4444]/20';
+            }
+        @endphp
+        <div class="glass-container rounded-[20px] p-4 shadow-sm border border-white/60 relative overflow-hidden group">
+            <!-- Card Header -->
+            <div class="flex justify-between items-start border-b border-slate-100/60 pb-3 mb-3 relative z-10">
+                <div class="flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($order->customer_name) }}&background={{ $bgColor }}&color=fff&rounded=true&bold=true" class="w-10 h-10 rounded-full shadow-sm border-2 border-white"/>
+                    <div>
+                        <div class="font-bold text-[14.5px] text-slate-800 leading-tight mb-0.5">{{ $order->customer_name }}</div>
+                        <div class="text-[11px] font-bold text-[#4F8EF7] bg-[#F0F5FF] px-2 py-0.5 rounded inline-flex items-center gap-1">
+                            <i class="ph ph-hash"></i> {{ $order->order_code }}
+                        </div>
+                    </div>
+                </div>
+                <!-- Status Workflow Mobile -->
+                <button @click="openStatusModal({{ $order->id }}, '{{ $order->status }}')" type="button" class="inline-flex flex-col items-end gap-1 px-2.5 py-1 rounded-[8px] text-[11px] font-bold {{ $badgeStyle }} shadow-sm text-right shrink-0">
+                    <span class="flex items-center gap-1">{{ $order->status }} <i class="ph ph-caret-down opacity-70"></i></span>
+                </button>
+            </div>
+
+            <!-- Card Body: Layanan & Biaya -->
+            <div class="grid grid-cols-2 gap-3 relative z-10">
+                <div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="ph ph-t-shirt"></i> Layanan</div>
+                    @if($order->items && $order->items->count() > 0)
+                        <div class="font-bold text-[13px] text-slate-700 leading-snug break-words pr-2">
+                            {{ mb_strimwidth(is_object($order->items->first()) ? $order->items->first()->service_name : $order->items[0]->service_name, 0, 20, '...') }}
+                        </div>
+                        @if($order->items->count() > 1)
+                            <div class="text-[11px] text-[#4F8EF7] font-bold mt-0.5">+{{ $order->items->count() - 1 }} Item Lain</div>
+                        @endif
+                    @else
+                        <div class="font-bold text-[13px] text-slate-700">{{ mb_strimwidth($order->service_name ?? 'Layanan', 0, 20, '...') }}</div>
+                    @endif
+                </div>
+                
+                <div class="text-right">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-end gap-1"><i class="ph ph-wallet"></i> Tagihan</div>
+                    <div class="font-black text-[14px] text-slate-800 mb-1.5 whitespace-nowrap">Rp {{ number_format($order->total_price, 0, ',', '.') }}</div>
+                    @if($order->payment_status == 'Belum Bayar' || $order->payment_status == 'Belum Lunas')
+                        <button type="button" @click="openPaymentModal({{ $order->id }}, '{{ $order->payment_status }}')" class="text-[10px] font-bold text-red-500 bg-red-50 border border-red-100 px-2 py-0.5 rounded inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Belum Bayar</button>
+                    @elseif($order->payment_status == 'DP')
+                        <button type="button" @click="openPaymentModal({{ $order->id }}, '{{ $order->payment_status }}')" class="text-[10px] font-bold text-orange-500 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> DP Sebagian</button>
+                    @else
+                        <button type="button" @click="openPaymentModal({{ $order->id }}, '{{ $order->payment_status }}')" class="text-[10px] font-bold text-[#10B981] bg-[#10B981]/10 border border-[#10B981]/20 px-2 py-0.5 rounded inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span> {{ $order->payment_status }}</button>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Card Footer: Actions -->
+            <div class="mt-4 pt-3 border-t border-slate-100/60 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar pb-1">
+                <div class="text-[11px] font-bold text-slate-400 flex items-center gap-1 shrink-0">
+                    <i class="ph-fill ph-clock"></i> {{ $order->created_at->format('d/m/y') }}
+                </div>
+
+                <div class="flex items-center gap-2 justify-end w-full">
+                    <!-- WA Autopilot -->
+                    @php
+                        $hasFonnteApi = !empty(env('FONNTE_TOKEN', \App\Models\Setting::where('key', 'fonnte_token')->value('value')));
+                        $phone = $order->customer_phone ? preg_replace('/^08/', '+628', $order->customer_phone) : null;
+                        $msg = "Halo Kak {$order->customer_name}, %0A%0ATerima kasih telah mencuci di Laundry Pro. Berikut pesanan anda: %0A🧾 *NO TRX:* {$order->order_code} %0A💰 *TOTAL:* Rp " . number_format($order->total_price, 0, ',', '.') . " %0A💳 *BAYAR:* {$order->payment_status} %0A📦 *STATUS:* {$order->status} %0A%0ACek realtime: %0A" . url('/track?q=' . $order->order_code);
+                        $waLink = $phone ? "https://wa.me/{$phone}?text={$msg}" : "javascript:alert('Nomor HP pelanggan tidak tersedia')";
+                    @endphp
+                    
+                    @if($hasFonnteApi)
+                    <form action="{{ route('order.send_wa_invoice', $order->id) }}" method="POST" class="inline-block m-0 p-0 shrink-0">
+                        @csrf
+                        <button type="submit" onclick="return confirm('Kirim WA Otomatis?')" class="w-8 h-8 rounded-lg bg-[#E6F8F0] border border-[#10B981]/20 text-[#10B981] flex items-center justify-center font-bold">
+                            <i class="ph-fill ph-whatsapp-logo text-[18px]"></i>
+                        </button>
+                    </form>
+                    @else
+                    <a href="{{ $waLink }}" target="_blank" class="w-8 h-8 rounded-lg bg-[#E6F8F0] border border-[#10B981]/20 text-[#10B981] flex items-center justify-center font-bold shrink-0">
+                        <i class="ph-fill ph-whatsapp-logo text-[18px]"></i>
+                    </a>
+                    @endif
+
+                    <!-- Print -->
+                    <a href="{{ route('order.invoice', $order->id) }}" target="_blank" class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 flex items-center justify-center font-bold shrink-0 shadow-sm">
+                        <i class="ph-fill ph-printer text-[16px]"></i>
+                    </a>
+
+                    <!-- Edit -->
+                    <a href="{{ route('order.edit', $order->id) }}" class="h-8 px-3 rounded-lg bg-[#F0F5FF] border border-[#4F8EF7]/30 text-[#4F8EF7] flex items-center justify-center font-bold text-[12px] gap-1.5 shrink-0 shadow-sm">
+                        <i class="ph-fill ph-pencil-simple text-[14px]"></i> Edit
+                    </a>
+
+                    <!-- Delete (Admin) -->
+                    @if(auth()->user()?->role === 'admin')
+                    <button type="button" @click="confirmDelete('{{ $order->id }}', '{{ $order->order_code }}', '{{ addslashes($order->customer_name) }}')" class="w-8 h-8 rounded-lg bg-[#FEE2E2] border border-[#EF4444]/20 text-[#EF4444] flex items-center justify-center font-bold shrink-0 shadow-sm">
+                        <i class="ph-fill ph-trash text-[18px]"></i>
+                    </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @empty
+        <div class="py-12 text-center glass-container rounded-[20px]">
+            <div class="flex flex-col items-center justify-center max-w-xs mx-auto">
+                <i class="ph-fill ph-receipt text-[45px] text-slate-300 mb-3"></i>
+                <h3 class="text-[16px] font-bold text-slate-600 mb-1">Belum Ada Transaksi</h3>
+            </div>
+        </div>
+        @endforelse
+
+        <!-- Mobile Pagination -->
         @if($orders->hasPages())
-        <div class="px-6 py-4 border-t border-white/60">
+        <div class="pt-2">
             {{ $orders->links('pagination::tailwind') }}
         </div>
         @endif
@@ -359,12 +490,70 @@ td {
         </div>
     </div>
 
+    <!-- MODERN PAYMENT STATUS MODAL -->
+    <div x-show="paymentModalOpen" x-cloak class="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden" style="display: none;">
+        <div x-show="paymentModalOpen" x-transition.opacity class="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"></div>
+        
+        <div x-show="paymentModalOpen"
+            @click.away="paymentModalOpen = false" 
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+            class="relative w-full max-w-[400px] bg-white rounded-[24px] shadow-2xl p-6 z-10 mx-4 border border-slate-100/80 flex flex-col max-h-[90vh]">
+            
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800 tracking-tight">Status Pembayaran</h3>
+                    <p class="text-[13px] text-slate-500 font-medium">Ubah tahapan pembayaran pesanan ini.</p>
+                </div>
+                <button type="button" @click="paymentModalOpen = false" class="text-slate-400 hover:text-slate-600 bg-slate-100 p-2 rounded-full transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar -mr-2 pr-2">
+                <div class="space-y-3 pb-2 relative">
+                    <template x-for="(payStatus, index) in paymentStatuses" :key="index">
+                        <div @click="setPaymentStatus(payStatus.name)" 
+                             class="group cursor-pointer border rounded-[16px] p-3 flex items-center transition-all duration-200"
+                             :class="currentPaymentStatus === payStatus.name ? 'border-[#3B82F6] bg-[#EFF6FF] shadow-sm' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'">
+                            
+                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center mr-4 shrink-0 transition-colors"
+                                 :class="currentPaymentStatus === payStatus.name ? 'border-[#3B82F6] bg-white' : 'border-slate-300 group-hover:border-[#3B82F6]'">
+                                 <div class="w-2.5 h-2.5 rounded-full bg-[#3B82F6] transition-opacity duration-200"
+                                      :class="currentPaymentStatus === payStatus.name ? 'opacity-100' : 'opacity-0'"></div>
+                            </div>
+                            
+                            <div class="flex items-center justify-center w-10 h-10 rounded-[12px] shrink-0 mr-4 transition-colors shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
+                                 :class="currentPaymentStatus === payStatus.name ? payStatus.bgActive + ' ' + payStatus.textActive : 'bg-white border border-slate-100 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600'">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" :d="payStatus.icon"></path></svg>
+                            </div>
+
+                            <div class="font-bold flex-1 text-[15px]"
+                                 :class="currentPaymentStatus === payStatus.name ? 'text-slate-800 tracking-tight' : 'text-slate-600'">
+                                <span x-text="payStatus.name"></span>
+                            </div>
+
+                            <div x-show="isUpdatingPayment && currentPaymentStatus === payStatus.name" class="shrink-0 pl-2">
+                                <svg class="animate-spin w-4 h-4 text-[#3B82F6]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
 </div>
 
 <script>
 function orderManager() {
     return {
-        searchQuery: '',
+        searchQuery: {!! json_encode(request('search', '')) !!},
         deleteModalOpen: false,
         deleteId: '',
         deleteCode: '',
@@ -376,6 +565,11 @@ function orderManager() {
         currentStatus: '',
         isUpdating: false,
         
+        paymentModalOpen: false,
+        updatePaymentId: '',
+        currentPaymentStatus: '',
+        isUpdatingPayment: false,
+        
         statuses: [
             { name: 'Diterima', icon: 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4', bgActive: 'bg-slate-100', textActive: 'text-slate-700' },
             { name: 'Dicuci', icon: 'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M7 8h2', bgActive: 'bg-blue-100', textActive: 'text-blue-600' },
@@ -384,6 +578,12 @@ function orderManager() {
             { name: 'Quality Control', icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z', bgActive: 'bg-indigo-100', textActive: 'text-indigo-600' },
             { name: 'Selesai', icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z', bgActive: 'bg-emerald-100', textActive: 'text-emerald-600' },
             { name: 'Diambil', icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z M9 15l2 2 4-4', bgActive: 'bg-teal-100', textActive: 'text-teal-600' }
+        ],
+        
+        paymentStatuses: [
+            { name: 'Belum Bayar', icon: 'M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5', bgActive: 'bg-red-100', textActive: 'text-red-500' },
+            { name: 'DP', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', bgActive: 'bg-orange-100', textActive: 'text-orange-500' },
+            { name: 'Lunas', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', bgActive: 'bg-emerald-100', textActive: 'text-emerald-500' },
         ],
 
         submitSearch() {
@@ -437,6 +637,54 @@ function orderManager() {
             } catch(e) {
                 alert('Terjadi kesalahan jaringan.');
                 this.isUpdating = false;
+            }
+        },
+
+        openPaymentModal(id, current) {
+            this.updatePaymentId = id;
+            
+            // Map "Belum Lunas" or "Lunas Cetak" just in case someone has old string
+            if(current === 'Belum Lunas') {
+                this.currentPaymentStatus = 'Belum Bayar';
+            } else if (current === 'Lunas Cetak') {
+                this.currentPaymentStatus = 'Lunas';
+            } else {
+                this.currentPaymentStatus = current;
+            }
+            
+            this.paymentModalOpen = true;
+        },
+
+        async setPaymentStatus(newStatus) {
+            if (this.currentPaymentStatus === newStatus || this.isUpdatingPayment) return;
+            
+            this.currentPaymentStatus = newStatus;
+            this.isUpdatingPayment = true;
+            
+            try {
+                const response = await fetch(`/order/${this.updatePaymentId}/payment-status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ payment_status: newStatus })
+                });
+                
+                const data = await response.json();
+                
+                if(data.success) {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 400);
+                } else {
+                    alert('Gagal update: ' + data.message);
+                    this.isUpdatingPayment = false;
+                }
+            } catch(e) {
+                alert('Terjadi kesalahan jaringan.');
+                this.isUpdatingPayment = false;
             }
         }
     }

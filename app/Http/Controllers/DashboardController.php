@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Customer;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $today = Carbon::today();
 
@@ -41,7 +42,7 @@ class DashboardController extends Controller
         }
 
         // Charts Data: Top Services (Pie)
-        $topServices = tap(Order::selectRaw('service_name, count(*) as total')
+        $topServices = tap(OrderItem::selectRaw('service_name, count(*) as total')
                             ->groupBy('service_name')
                             ->orderByDesc('total')
                             ->take(4)
@@ -66,14 +67,24 @@ class DashboardController extends Controller
         ));
     }
 
-    public function kasir()
+    public function kasir(Request $request)
     {
         $today = Carbon::today();
+        $search = $request->input('search');
         
         $totalOrderHariIni = Order::whereDate('created_at', $today)->count();
-        $orders = Order::latest()->paginate(10); // Recent orders for table
+        $orders = Order::latest()
+            ->when($search, function ($query, $search) {
+                return $query->where(function($q) use ($search) {
+                    $q->where('customer_name', 'like', "%{$search}%")
+                      ->orWhere('order_code', 'like', "%{$search}%")
+                      ->orWhere('customer_phone', 'like', "%{$search}%");
+                });
+            })
+            ->paginate(10)
+            ->withQueryString();
         
-        return view('dashboard.kasir', compact('totalOrderHariIni', 'orders'));
+        return view('dashboard.kasir', compact('totalOrderHariIni', 'orders', 'search'));
     }
 
     public function owner()
@@ -113,9 +124,10 @@ class DashboardController extends Controller
         $diffOrderHarian = $totalOrderHariIni - round($rataRataOrderHarian);
 
         // 4. Ranking Layanan Terlaris (Revenue)
-        $topServices = tap(Order::selectRaw('service_name, sum(total_price) as total_revenue')
-            ->where('payment_status', 'Lunas')
-            ->groupBy('service_name')
+        $topServices = tap(OrderItem::selectRaw('order_items.service_name, sum(order_items.subtotal) as total_revenue')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.payment_status', 'Lunas')
+            ->groupBy('order_items.service_name')
             ->orderByDesc('total_revenue')
             ->take(4)
             ->get(), function($list) {

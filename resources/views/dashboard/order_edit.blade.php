@@ -108,33 +108,60 @@ input[type="radio"]:checked + span {
                         </div>
                     </div>
 
+                    <!-- SECTION 2: KERANJANG LAYANAN (MULTIPLE ITEMS) -->
                     <div class="bg-white/50 rounded-2xl p-5 border border-white/60 shadow-sm">
-                        <label class="block text-[14px] font-bold text-slate-600 mb-2">Pilih Layanan <span class="text-red-400">*</span></label>
-                        <div class="relative mb-4">
-                            <select name="service_name" required class="w-full h-12 rounded-[14px] input-cloud pl-4 pr-10 text-[14.5px] font-medium text-slate-700 appearance-none cursor-pointer">
-                                @foreach($services as $svc)
-                                    <option value="{{ $svc->service_name }}" data-price="{{ $svc->price }}" {{ old('service_name', $order->service_name) == $svc->service_name ? 'selected' : '' }}>
-                                        {{ $svc->service_name }} (Rp {{ number_format($svc->price, 0, ',', '.') }}/{{ $svc->unit }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                            </div>
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="block text-[14px] font-bold text-slate-600 mb-2">Keranjang Layanan <span class="text-red-400">*</span></label>
+                            <button type="button" @click="addItem()" class="px-3 py-1 bg-[#F0F5FF] text-[#5B8DEF] text-[12px] font-bold rounded-lg hover:bg-[#5B8DEF] hover:text-white transition-all flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                Add Item
+                            </button>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-[14px] font-bold text-slate-600 mb-2">Berat / Qty</label>
-                                <input type="number" step="0.1" name="weight" value="{{ old('weight', $order->weight) }}" x-model="weight" @input="calculateEdit()" class="w-full h-12 rounded-[14px] input-cloud px-4 text-[14.5px] font-medium text-slate-700 placeholder-slate-400">
-                            </div>
-                            <div>
-                                <label class="block text-[14px] font-bold text-slate-600 mb-2">Detail Item</label>
-                                <input type="text" name="package_detail" value="{{ old('package_detail', $order->package_detail) }}" class="w-full h-12 rounded-[14px] input-cloud px-4 text-[14.5px] font-medium text-slate-700 placeholder-slate-400">
-                            </div>
+                        <div class="space-y-3 mb-4">
+                            <template x-for="(item, index) in items" :key="index">
+                                <div class="grid grid-cols-1 gap-3 items-end bg-white border border-slate-100 p-3 rounded-xl relative group">
+                                    <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="absolute -top-2 -right-2 w-6 h-6 bg-red-100 text-red-500 rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+
+                                    <!-- Service Choice -->
+                                    <div>
+                                        <label class="block text-[12px] font-bold text-slate-600 mb-1">Layanan</label>
+                                        <select x-model="item.service_name" @change="onServiceChangeEdit(index)" :name="'items['+index+'][service_name]'" required class="w-full h-10 rounded-[10px] input-cloud px-3 text-[13px] font-medium text-slate-700">
+                                            <option value="">-- Pilih --</option>
+                                            @foreach($services as $svc)
+                                                <option value="{{ $svc->service_name }}" data-price="{{ $svc->price }}" data-unit="{{ $svc->unit }}">
+                                                    {{ $svc->service_name }} (Rp {{ number_format($svc->price, 0, ',', '.') }}/{{ $svc->unit }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="flex gap-3">
+                                        <!-- Qty/Weight -->
+                                        <div class="flex-1">
+                                            <label class="block text-[12px] font-bold text-slate-600 mb-1">Qty</label>
+                                            <div class="relative">
+                                                <input type="number" step="0.01" x-model="item.qty" @input="calculateEdit()" :name="'items['+index+'][qty]'" required placeholder="1" class="w-full h-10 rounded-[10px] input-cloud pl-3 pr-10 text-[13px] font-medium text-slate-700">
+                                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 font-bold text-[11px]" x-text="item.unit || '-'"></div>
+                                                <input type="hidden" :name="'items['+index+'][unit]'" :value="item.unit">
+                                                <input type="hidden" :name="'items['+index+'][price]'" :value="item.price">
+                                            </div>
+                                        </div>
+
+                                        <!-- Subtotal display -->
+                                        <div class="flex-1 pl-2">
+                                            <label class="block text-[11px] font-bold text-slate-400 mb-1">Subtotal</label>
+                                            <div class="text-[14px] font-black text-slate-700 leading-10">Rp <span x-text="formatTotal(item.subtotal)">0</span></div>
+                                            <input type="hidden" :name="'items['+index+'][subtotal]'" :value="item.subtotal">
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
 
-                        <label class="block text-[14px] font-bold text-slate-600 mb-2">Tenggat Waktu Selesai</label>
+                        <label class="block text-[14px] font-bold text-slate-600 mb-2 mt-4">Tenggat Waktu Selesai</label>
                         <input type="datetime-local" name="estimated_finish" value="{{ old('estimated_finish', $order->estimated_finish ? \Carbon\Carbon::parse($order->estimated_finish)->format('Y-m-d\TH:i') : '') }}" class="w-full h-12 rounded-[14px] input-cloud px-4 text-[14.5px] font-medium text-slate-500">
                     </div>
 
@@ -145,7 +172,7 @@ input[type="radio"]:checked + span {
                     <h3 class="text-lg font-bold text-slate-700 mb-4 border-b border-slate-200/60 pb-3 flex items-center justify-between">
                         <span>Workflow Laundry</span>
                         <div class="w-6 h-6 rounded bg-[#E4F0FF] text-[#4F8EF7] flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2L13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                         </div>
                     </h3>
 
@@ -275,18 +302,39 @@ input[type="radio"]:checked + span {
 <script>
 function orderCalculatorEdit() {
     return {
-        // Init state from server value, but weight may change
-        weight: '{{ old('weight', $order->weight) }}',
+        @php
+            $defaultItems = [['service_name' => '', 'qty' => 1, 'unit' => '', 'price' => 0, 'subtotal' => 0]];
+            $orderItems = $order->items->count() > 0 ? $order->items : $defaultItems;
+        @endphp
+        items: {!! json_encode($orderItems) !!},
         discount: '{{ old('discount', $order->discount) }}',
         tax: '{{ old('tax', $order->tax) }}',
         
+        addItem() {
+            this.items.push({ service_name: '', qty: 1, unit: '', price: 0, subtotal: 0 });
+            this.calculateEdit();
+        },
+        
+        removeItem(index) {
+            this.items.splice(index, 1);
+            this.calculateEdit();
+        },
+        
+        onServiceChangeEdit(index) {
+            const el = document.querySelector(`select[name="items[${index}][service_name]"]`);
+            if(el && el.selectedIndex > 0) {
+                const opt = el.options[el.selectedIndex];
+                this.items[index].price = parseFloat(opt.getAttribute('data-price') || 0);
+                this.items[index].unit = opt.getAttribute('data-unit') || 'Pcs';
+            } else {
+                this.items[index].price = 0;
+                this.items[index].unit = '';
+            }
+            this.calculateEdit();
+        },
+
         get subtotal() {
-            let w = parseFloat(this.weight) || 0;
-            const selectEl = document.querySelector('select[name="service_name"]');
-            if(!selectEl) return 0;
-            const option = selectEl.options[selectEl.selectedIndex];
-            const priceBase = parseFloat(option.getAttribute('data-price') || 0);
-            return priceBase * w;
+            return this.items.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
         },
 
         get taxAmount() {
@@ -297,19 +345,25 @@ function orderCalculatorEdit() {
         },
 
         get total() {
-            if(!this.weight) return parseInt('{{ $order->total_price }}') || 0;
-            
             let disc = parseFloat(this.discount) || 0;
             let calc = this.subtotal - disc + this.taxAmount;
             return calc > 0 ? calc : 0;
         },
 
         formatTotal(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            return num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") : "0";
         },
 
         calculateEdit() {
-            // Keep state bound
+            this.items.forEach(item => {
+                let p = parseFloat(item.price) || 0;
+                let q = parseFloat(item.qty) || 0;
+                item.subtotal = p * q;
+            });
+        },
+
+        init() {
+            setTimeout(() => this.calculateEdit(), 100);
         }
     }
 }

@@ -117,7 +117,7 @@
                     </div>
                     <div>
                         <h3 class="text-[16px] font-bold text-slate-800">Profil & Keamanan Hak Akses</h3>
-                        <p class="text-[12px] font-medium text-slate-400">Atur kredensial login sesi Anda saat ini ({{ ucfirst(Auth::user()->role) }}).</p>
+                        <p class="text-[12px] font-medium text-slate-400">Atur kredensial login sesi Anda saat ini ({{ ucfirst(auth()->user()?->role) }}).</p>
                     </div>
                 </div>
 
@@ -126,7 +126,7 @@
                     <!-- Info Email Blocked -->
                     <div class="space-y-2">
                         <label class="block text-[13px] font-bold text-slate-700">Email Akun (Login)</label>
-                        <input type="text" value="{{ Auth::user()->email }}" disabled
+                        <input type="text" value="{{ auth()->user()?->email }}" disabled
                             class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold text-slate-400 cursor-not-allowed shadow-none outline-none">
                         <p class="text-[11px] text-slate-400 font-medium">Email login tidak dapat diubah secara sepihak.</p>
                     </div>
@@ -134,7 +134,7 @@
                     <!-- Profile Name -->
                     <div class="space-y-2">
                         <label class="block text-[13px] font-bold text-slate-700">Nama Tampilan</label>
-                        <input type="text" name="profile_name" value="{{ old('profile_name', Auth::user()->name) }}" required
+                        <input type="text" name="profile_name" value="{{ old('profile_name', auth()->user()?->name) }}" required
                             class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary placeholder-slate-400 text-[14px] font-semibold text-slate-700 transition-all shadow-sm outline-none">
                     </div>
 

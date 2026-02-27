@@ -1,0 +1,38 @@
+[
+    {
+        "id": 1,
+        "name": "restu",
+        "email": "restu123@gmail.com",
+        "email_verified_at": null,
+        "role": "admin",
+        "created_at": "2026-02-25T02:17:24.000000Z",
+        "updated_at": "2026-02-25T02:17:24.000000Z"
+    },
+    {
+        "id": 2,
+        "name": "Admin Master",
+        "email": "admin@laundry.com",
+        "email_verified_at": null,
+        "role": "admin",
+        "created_at": "2026-02-25T03:16:10.000000Z",
+        "updated_at": "2026-02-26T04:26:08.000000Z"
+    },
+    {
+        "id": 3,
+        "name": "Kasir Cepat",
+        "email": "kasir@laundry.com",
+        "email_verified_at": null,
+        "role": "kasir",
+        "created_at": "2026-02-25T03:16:11.000000Z",
+        "updated_at": "2026-02-26T04:56:19.000000Z"
+    },
+    {
+        "id": 4,
+        "name": "Owner Bos",
+        "email": "owner@laundry.com",
+        "email_verified_at": null,
+        "role": "owner",
+        "created_at": "2026-02-25T03:16:11.000000Z",
+        "updated_at": "2026-02-26T04:26:09.000000Z"
+    }
+]

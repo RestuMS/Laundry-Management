@@ -32,8 +32,15 @@ class OrderController extends Controller
     public function create()
     {
         $services = Service::all();
+        
+        // Fetch unique customer names and phones for autocomplete suggestions
+        $customers = Order::select('customer_name', 'customer_phone')
+            ->distinct()
+            ->orderBy('customer_name')
+            ->get();
+            
         // Actually, we will just use a modal or simple view for creating, but we can return a view if needed.
-        return view('dashboard.order_create', compact('services'));
+        return view('dashboard.order_create', compact('services', 'customers'));
     }
 
     public function store(Request $request)
@@ -41,16 +48,19 @@ class OrderController extends Controller
         $request->validate([
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'nullable|string|max:20',
-            'service_name' => 'required|string|max:255',
-            'weight' => 'nullable|numeric|min:0',
-            'package_detail' => 'nullable|string|max:255',
             'estimated_finish' => 'nullable|date',
             'total_price' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'tax' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string|max:255',
             'payment_status' => 'required|in:Belum Bayar,DP,Lunas',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.service_name' => 'required|string|max:255',
+            'items.*.qty' => 'required|numeric|min:0.01',
+            'items.*.unit' => 'required|string',
+            'items.*.price' => 'required|numeric|min:0',
+            'items.*.subtotal' => 'required|numeric|min:0',
         ]);
 
         $orderCode = 'ORD-' . strtoupper(uniqid());
@@ -59,9 +69,6 @@ class OrderController extends Controller
             'order_code' => $orderCode,
             'customer_name' => $request->customer_name,
             'customer_phone' => $request->customer_phone,
-            'service_name' => $request->service_name,
-            'weight' => $request->weight,
-            'package_detail' => $request->package_detail,
             'estimated_finish' => $request->estimated_finish,
             'status' => 'Diterima',
             'total_price' => $request->total_price,
@@ -72,16 +79,24 @@ class OrderController extends Controller
             'notes' => $request->notes,
         ]);
 
-        app(WhatsappNotificationService::class)->sendTrackingUpdate($order);
-
-        // Deduct inventory items that have a usage logic
-        if ($request->weight && $request->weight > 0) {
+        foreach ($request->items as $item) {
+            $order->items()->create([
+                'service_name' => $item['service_name'],
+                'qty' => $item['qty'],
+                'unit' => $item['unit'],
+                'price' => $item['price'],
+                'subtotal' => $item['subtotal'],
+            ]);
+            
+            // Deduct inventory dynamically based on qty if logic needs it, basic usage rule per qty
             $inventories = Inventory::where('usage_per_kg', '>', 0)->get();
             foreach ($inventories as $inv) {
-                $inv->stock = max(0, $inv->stock - ($inv->usage_per_kg * $request->weight));
+                $inv->stock = max(0, $inv->stock - ($inv->usage_per_kg * $item['qty']));
                 $inv->save();
             }
         }
+
+        app(WhatsappNotificationService::class)->sendTrackingUpdate($order);
 
         return redirect()->route('order.index')->with('success', 'Order berhasil ditambahkan! Notifikasi WhatsApp otomatis dikirim.');
     }
@@ -97,9 +112,6 @@ class OrderController extends Controller
         $request->validate([
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'nullable|string|max:20',
-            'service_name' => 'required|string|max:255',
-            'weight' => 'nullable|numeric|min:0',
-            'package_detail' => 'nullable|string|max:255',
             'estimated_finish' => 'nullable|date',
             'total_price' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
@@ -107,11 +119,28 @@ class OrderController extends Controller
             'payment_method' => 'nullable|string|max:255',
             'status' => 'required|string',
             'payment_status' => 'required|in:Belum Bayar,DP,Lunas',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.service_name' => 'required|string|max:255',
+            'items.*.qty' => 'required|numeric|min:0.01',
+            'items.*.unit' => 'required|string',
+            'items.*.price' => 'required|numeric|min:0',
+            'items.*.subtotal' => 'required|numeric|min:0',
         ]);
 
         $oldStatus = $order->status;
-        $order->update($request->all());
+        $order->update($request->except('items'));
+        
+        $order->items()->delete(); // Recreate items for simplicity on update
+        foreach ($request->items as $item) {
+            $order->items()->create([
+                'service_name' => $item['service_name'],
+                'qty' => $item['qty'],
+                'unit' => $item['unit'],
+                'price' => $item['price'],
+                'subtotal' => $item['subtotal'],
+            ]);
+        }
 
         if ($oldStatus !== $order->status) {
             app(WhatsappNotificationService::class)->sendTrackingUpdate($order);
@@ -136,6 +165,17 @@ class OrderController extends Controller
         return response()->json(['success' => true, 'message' => 'Status berhasil diupdate!', 'new_status' => $order->status]);
     }
 
+    public function updatePaymentStatus(Request $request, Order $order)
+    {
+        $request->validate([
+            'payment_status' => 'required|in:Belum Bayar,Belum Lunas,DP,Lunas,Lunas Cetak'
+        ]);
+
+        $order->update(['payment_status' => $request->payment_status]);
+
+        return response()->json(['success' => true, 'message' => 'Status Pembayaran berhasil diupdate!', 'new_status' => $order->payment_status]);
+    }
+
     public function invoice(Order $order)
     {
         return view('dashboard.order_invoice', compact('order'));
@@ -150,6 +190,39 @@ class OrderController extends Controller
         } else {
             return redirect()->back()->with('error', 'Gagal kirim WA! Pastikan nomor pelanggan valid atau FONNTE_TOKEN sudah terpasang di .env/pengaturan.');
         }
+    }
+
+    public function scanPickup(Request $request)
+    {
+        $request->validate([
+            'order_code' => 'required|string'
+        ]);
+
+        $order = Order::where('order_code', $request->order_code)->first();
+
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Pesanan tidak ditemukan di database.']);
+        }
+
+        if ($order->status == 'Diambil') {
+            return response()->json(['success' => false, 'message' => 'Pesanan ini sudah pernah Diambil sebelumnya.']);
+        }
+
+        $oldStatus = $order->status;
+        $order->update([
+            'status' => 'Diambil',
+            'payment_status' => 'Lunas' // Auto-lunas if taken
+        ]);
+
+        if ($oldStatus !== 'Diambil') {
+            app(WhatsappNotificationService::class)->sendTrackingUpdate($order);
+        }
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Berhasil! Pesanan ' . $order->customer_name . ' berhasil diselesaikan.',
+            'order' => $order
+        ]);
     }
 
     public function destroy(Order $order)

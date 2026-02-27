@@ -68,8 +68,12 @@
 
         @forelse($services as $svc)
         <div class="service-card rounded-[24px] p-6 relative flex flex-col items-center text-center group">
-            <div class="w-24 h-24 rounded-full icon-container flex items-center justify-center mb-5 border-4 border-white">
-                <svg class="w-12 h-12 text-[#5B8DEF] group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+            <div class="w-24 h-24 rounded-full icon-container overflow-hidden flex items-center justify-center mb-5 border-4 border-white p-3">
+                @if($svc->icon)
+                    <img src="{{ asset('images/' . $svc->icon) }}" alt="{{ $svc->service_name }}" class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300">
+                @else
+                    <svg class="w-12 h-12 text-[#5B8DEF] group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                @endif
             </div>
             
             <h3 class="text-lg font-bold text-slate-700 mb-1">{{ $svc->service_name }}</h3>
@@ -143,6 +147,11 @@
                         <label class="block text-[14px] font-bold text-slate-600 mb-2">Deskripsi</label>
                         <textarea name="description" x-model="form.description" class="w-full h-20 rounded-[14px] input-cloud p-4 text-[14.5px] font-medium text-slate-700 align-top resize-none"></textarea>
                     </div>
+
+                    <div>
+                        <label class="block text-[14px] font-bold text-slate-600 mb-2">Nama File Icon (.png) <span class="text-xs font-normal text-slate-400 ml-1">(Opsional, letakkan di public/images)</span></label>
+                        <input type="text" name="icon" x-model="form.icon" placeholder="co: jas.png" class="w-full h-12 rounded-[14px] input-cloud px-4 text-[14.5px] font-medium text-slate-700">
+                    </div>
                 </div>
 
                 <div class="flex gap-3">
@@ -167,12 +176,13 @@ function serviceManager() {
             service_name: '',
             price: '',
             unit: 'Kg',
-            description: ''
+            description: '',
+            icon: ''
         },
         openAddModal() {
             this.isEdit = false;
             this.formAction = '{{ route('layanan.store') }}';
-            this.form = { service_name: '', price: '', unit: 'Kg', description: '' };
+            this.form = { service_name: '', price: '', unit: 'Kg', description: '', icon: '' };
             this.modalOpen = true;
         },
         openEditModal(svc) {

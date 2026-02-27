@@ -2,236 +2,397 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>LaundryPro - @yield('title')</title>
 
-    <!-- Fonts -->
+    <!-- Preconnect to CDNs for faster DNS resolution -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-    <!-- Tailwind CSS -->
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Phosphor Icons (Modern Minimalist Icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Alpine.js (Defer to avoid render blocking) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Chart JS (Defer to avoid render blocking) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    
+    <!-- SweetAlert2 (Defer) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Tailwind CSS (Play CDN blocks main thread, preconnect helps speed) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Poppins', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
                     },
                     colors: {
-                        primary: '#5B8DEF',
-                        secondary: '#8FB8FF',
-                        accent: {
-                            success: '#59C98C',
-                            warning: '#FFB84D',
-                            danger: '#FF7A7A'
-                        },
-                        cloud: {
-                            100: '#EAF4FF',
-                            200: '#DCEBFF',
-                            300: '#CFE2FF'
-                        }
+                        primary: '#3B82F6', // Blue 500
+                        'primary-light': '#EFF6FF', // Blue 50
+                        secondary: '#64748B', // Slate 500
+                        background: '#F8FAFC', // Slate 50
+                        card: '#FFFFFF',
                     },
                     boxShadow: {
-                        'soft': '0 4px 20px 0 rgba(91, 141, 239, 0.08)',
-                        'float': '0 8px 30px 0 rgba(91, 141, 239, 0.15)',
+                        'floating': '0 10px 40px -10px rgba(0,0,0,0.08)',
+                        'bottom-nav': '0 -4px 20px rgba(0,0,0,0.05)',
+                        'soft': '0 2px 10px rgba(0,0,0,0.02)',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
                     }
                 }
             }
         }
     </script>
     
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Chart JS -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Vite for Auto Refresh -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Vite disabled to fix reloading latency ->  {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}} -->
 
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #EAF4FF;
-            /* In case bg-admin.png doesn't load/cover everything */
+            background-color: #F8FAFC;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.55);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+        /* Hide scrollbar */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
         }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.85);
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 4px 20px 0 rgba(91, 141, 239, 0.08);    
+            border-top: 1px solid rgba(241,245,249,0.8);
         }
 
-        /* Hover floating animation */
-        .hover-float {
-            transition: all 0.3s ease-in-out;
-        }
-        .hover-float:hover {
-            transform: scale(1.02) translateY(-4px);
-            box-shadow: 0 12px 30px 0 rgba(91, 141, 239, 0.15);
+        .glass-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(241, 245, 249, 0.8);
         }
 
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        /* Override glass-card to Mobile Floating Card Style */
+        .glass-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05);
+            border: 1px solid rgba(241,245,249, 0.8);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
+        
+        @media(max-width: 1023px){
+            .glass-card:active {
+                transform: scale(0.98);
+            }
         }
-        ::-webkit-scrollbar-thumb {
-            background: #8FB8FF;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #5B8DEF;
+        
+        @media(min-width: 1024px){
+            .hover-float:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 12px 25px -5px rgba(0,0,0,0.08);
+            }
         }
     </style>
 </head>
-<body class="antialiased min-h-screen text-slate-700 overflow-hidden" x-data="{ sidebarOpen: true }">
-    
+<body class="text-slate-800 antialiased font-sans selection:bg-primary selection:text-white pb-safe" x-data="{ mobileMenuOpen: false }">
+
     <!-- Full Background Cover -->
     <div class="fixed inset-0 z-[-1] bg-cover bg-center bg-no-repeat" style="background-image: url('{{ asset('images/bg-admin.png') }}'); background-position: left bottom;">
         <!-- Fallback gradient if image not found -->
         <div class="absolute inset-0 bg-gradient-to-br from-[#EAF4FF]/80 via-[#DCEBFF]/80 to-[#CFE2FF]/90 mix-blend-overlay"></div>
     </div>
 
-    <div class="flex h-screen w-full relative z-0">
-        <!-- Sidebar -->
-        <!-- Sidebar -->
-        <aside class="glass-panel w-72 h-full flex flex-col transition-all duration-300 z-20 flex-shrink-0" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full absolute'">
-            
-            <!-- Logo area -->
-            <div class="h-20 flex items-center px-6 gap-3 pt-4 mb-4">
-                <div class="w-10 h-10 bg-white/90 rounded-xl shadow-sm flex items-center justify-center text-primary relative">
-                    <img src="{{ asset('images/icon.png') }}" alt="LaundryPro Logo" class="w-8 h-8 object-contain">
+    @php
+        $role = auth()->user()?->role ?? 'admin';
+        
+        // Define Menus Per Role
+        $menus = [
+            'admin' => [
+                ['name' => 'Home', 'url' => route('dashboard'), 'icon' => 'ph-house', 'active' => request()->routeIs('dashboard')],
+                ['name' => 'Order', 'url' => route('order.index'), 'icon' => 'ph-receipt', 'active' => request()->routeIs('order.*')],
+                ['name' => 'Layanan', 'url' => route('layanan.index'), 'icon' => 'ph-washing-machine', 'active' => request()->routeIs('layanan.*')],
+                ['name' => 'Pelanggan', 'url' => route('pelanggan.index'), 'icon' => 'ph-users', 'active' => request()->routeIs('pelanggan.*')],
+                ['name' => 'Laporan', 'url' => route('laporan.index'), 'icon' => 'ph-chart-line-up', 'active' => request()->routeIs('laporan.*')],
+                ['name' => 'Keuangan', 'url' => route('expense.index'), 'icon' => 'ph-wallet', 'active' => request()->routeIs('expense.*')],
+                ['name' => 'Inventaris', 'url' => route('inventory.index'), 'icon' => 'ph-box-box', 'active' => request()->routeIs('inventory.*')],
+                ['name' => 'Karyawan', 'url' => route('pengguna.index'), 'icon' => 'ph-identification-badge', 'active' => request()->routeIs('pengguna.*')],
+                ['name' => 'Pengaturan', 'url' => route('settings.index'), 'icon' => 'ph-gear', 'active' => request()->routeIs('settings.*')],
+            ],
+            'kasir' => [
+                ['name' => 'Home', 'url' => route('kasir'), 'icon' => 'ph-house', 'active' => request()->routeIs('kasir')],
+                ['name' => 'Transaksi', 'url' => route('order.index'), 'icon' => 'ph-receipt', 'active' => request()->routeIs('order.*')],
+                ['name' => 'Pelanggan', 'url' => route('pelanggan.index'), 'icon' => 'ph-users', 'active' => request()->routeIs('pelanggan.*')],
+                ['name' => 'Pengaturan', 'url' => route('settings.index'), 'icon' => 'ph-gear', 'active' => request()->routeIs('settings.*')],
+            ],
+            'owner' => [
+                ['name' => 'Home', 'url' => route('owner'), 'icon' => 'ph-house', 'active' => request()->routeIs('owner')],
+                ['name' => 'Laporan', 'url' => route('laporan.index'), 'icon' => 'ph-chart-pie', 'active' => request()->routeIs('laporan.*')],
+                ['name' => 'Pengeluaran', 'url' => route('expense.index'), 'icon' => 'ph-wallet', 'active' => request()->routeIs('expense.*')],
+                ['name' => 'Inventaris', 'url' => route('inventory.index'), 'icon' => 'ph-box-box', 'active' => request()->routeIs('inventory.*')],
+                ['name' => 'Profil', 'url' => route('settings.index'), 'icon' => 'ph-user-circle', 'active' => request()->routeIs('settings.*')],
+            ]
+        ];
+
+        $currentNav = $menus[$role] ?? $menus['admin'];
+        
+        // Extract subset for Bottom Nav (Strictly Home, Action, Settings for mobile aesthetics)
+        $bottomNavItems = [];
+        $middleCreateUrl = route('order.create'); // FAB Center action
+        
+        // Find indices of Home and Settings based on role map
+        $homeIndex = 0; // usually 0
+        $settingsIndex = count($currentNav) - 1; // usually last element
+        
+        if ($role == 'owner') {
+           $bottomNavItems = [$currentNav[0], $currentNav[$settingsIndex]];
+        } elseif ($role == 'kasir') {
+           // For Kasir, strict 3 icons only (Home, FAB, Order)
+           $bottomNavItems = [$currentNav[0], $currentNav[1]];
+        } else {
+           $bottomNavItems = [$currentNav[0], $currentNav[1] /* Order index */, $currentNav[$settingsIndex]];
+        }
+    @endphp
+
+    <!-- Mobile Top Header (Sticky) -->
+    <header class="fixed top-0 inset-x-0 h-[65px] z-40 glass-header px-5 flex items-center justify-between lg:hidden transition-all duration-300">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-primary relative">
+                <i class="ph-fill ph-drop text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-[17px] font-bold text-slate-800 leading-tight tracking-tight">Laundry<span class="text-primary">Pro</span></h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-2.5">
+            <!-- Notification Bell -->
+            <button class="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 hover:text-primary transition-colors relative shadow-soft">
+                <i class="ph ph-bell text-lg"></i>
+                <span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+            </button>
+            @if($role == 'admin')
+            <a href="{{ route('settings.index') }}" class="w-9 h-9 rounded-full overflow-hidden border-2 border-white shadow-soft">
+                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()?->name ?? 'User') }}&background=3B82F6&color=fff&bold=true" alt="Avatar" class="w-full h-full object-cover">
+            </a>
+            @else
+            <!-- Logic Logout PWA untuk Owner dan Kasir (Akses Cepat Header) -->
+            <a href="{{ route('logout') }}" onclick="return confirm('Apakah Anda yakin ingin Log Out?')" class="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-red-600 border border-red-100 shadow-soft hover:bg-red-500 hover:text-white transition-colors">
+                <i class="ph ph-sign-out text-base font-bold"></i>
+            </a>
+            @endif
+        </div>
+    </header>
+
+    <div class="flex min-h-screen pt-[65px] lg:pt-0 pb-[80px] lg:pb-0">
+        
+        <!-- Desktop Sidebar (Hidden on Mobile) -->
+        <aside class="hidden lg:flex flex-col w-[280px] fixed inset-y-0 left-0 bg-white border-r border-slate-100 z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+            <div class="h-[80px] flex md:flex-col lg:flex-row items-center px-6 gap-3 pt-6 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-primary relative">
+                    <i class="ph-fill ph-drop text-2xl"></i>
                 </div>
-                <h1 class="text-2xl font-bold text-primary tracking-tight">{{ $globalSettings['store_name'] ?? 'LaundryPro' }}</h1>
+                <h1 class="text-[20px] font-bold text-slate-800 tracking-tight">Laundry<span class="text-primary">Pro</span></h1>
             </div>
 
-            <!-- Navigation Links -->
-            <nav class="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto">
-                
-                @php
-                    $role = Auth::user()->role ?? 'admin';
-                    
-                    $allNavItems = [
-                        'admin' => [
-                            ['name' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z', 'active' => request()->routeIs('dashboard')],
-                            ['name' => 'Order', 'url' => route('order.index'), 'icon' => 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z', 'active' => request()->routeIs('order.index')],
-                            ['name' => 'Layanan', 'url' => route('layanan.index'), 'icon' => 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', 'active' => request()->routeIs('layanan.index')],
-                            ['name' => 'Bahan Baku', 'url' => route('inventory.index'), 'icon' => 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'active' => request()->routeIs('inventory.index')],
-                            ['name' => 'Pelanggan', 'url' => route('pelanggan.index'), 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', 'active' => request()->routeIs('pelanggan.index')],
-                            ['name' => 'Laporan', 'url' => route('laporan.index'), 'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'active' => request()->routeIs('laporan.index')],
-                            ['name' => 'Pengeluaran', 'url' => route('expense.index'), 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'active' => request()->routeIs('expense.index')],
-                            ['name' => 'Karyawan / Kasir', 'url' => route('pengguna.index'), 'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', 'active' => request()->routeIs('pengguna.index')],
-                            ['name' => 'Pengaturan', 'url' => route('settings.index'), 'icon' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z', 'active' => request()->routeIs('settings.index')],
-                        ],
-                        'kasir' => [
-                            ['name' => 'Dashboard Kasir', 'url' => route('kasir'), 'icon' => 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z', 'active' => request()->routeIs('kasir')],
-                            ['name' => 'Order Baru', 'url' => route('order.index'), 'icon' => 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z', 'active' => request()->routeIs('order.index')],
-                            ['name' => 'Bahan Baku', 'url' => route('inventory.index'), 'icon' => 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'active' => request()->routeIs('inventory.index')],
-                            ['name' => 'Data Pelanggan', 'url' => route('pelanggan.index'), 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', 'active' => request()->routeIs('pelanggan.index')],
-                            ['name' => 'Biaya Keluar', 'url' => route('expense.index'), 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'active' => request()->routeIs('expense.index')],
-                            ['name' => 'Pengaturan Kasir', 'url' => route('settings.index'), 'icon' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z', 'active' => request()->routeIs('settings.index')],
-                        ],
-                        'owner' => [
-                            ['name' => 'Executive View', 'url' => route('owner'), 'icon' => 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z', 'active' => request()->routeIs('owner')],
-                            ['name' => 'Laporan Bisnis', 'url' => route('laporan.index'), 'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'active' => request()->routeIs('laporan.index')],
-                            ['name' => 'Pelanggan & VIP', 'url' => route('pelanggan.index'), 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', 'active' => request()->routeIs('pelanggan.index')],
-                            ['name' => 'Profil / Pengaturan', 'url' => route('settings.index'), 'icon' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z', 'active' => request()->routeIs('settings.index')],
-                        ]
-                    ];
-                    
-                    $navItems = $allNavItems[$role] ?? $allNavItems['admin'];
-                @endphp
+            <div class="px-6 pb-4">
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()?->name ?? 'User') }}&background=3B82F6&color=fff&bold=true" class="w-10 h-10 rounded-full shadow-sm">
+                    <div>
+                        <div class="text-[14px] font-bold text-slate-700">{{ auth()->user()?->name ?? 'Admin' }}</div>
+                        <div class="text-[12px] font-medium text-slate-400 capitalize">{{ $role }} Account</div>
+                    </div>
+                </div>
+            </div>
 
-                @foreach($navItems as $item)
-                    <a href="{{ $item['url'] ?? '#' }}" class="group flex items-center justify-between px-4 py-3.5 rounded-xl text-[14.5px] font-medium transition-all duration-300 relative overflow-hidden {{ $item['active'] ? 'text-white' : 'text-slate-600 hover:text-white' }}">
-                        @if($item['active'])
-                            <div class="absolute inset-0 bg-gradient-to-r from-[#7FB3FF] to-[#5B8DEF] z-0 shadow-md"></div>
-                        @else
-                            <div class="absolute inset-0 bg-gradient-to-r from-[#7FB3FF] to-[#5B8DEF] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0 shadow-md"></div>
-                        @endif
-                        
-                        <div class="flex items-center gap-3.5 relative z-10 w-full">
-                            <svg class="w-[22px] h-[22px] {{ $item['active'] ? 'text-white' : 'text-primary group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="{{ $item['icon'] }}"></path>
-                            </svg>
-                            {{ $item['name'] }}
-                        </div>
-                        
-
+            <p class="px-6 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 mt-2">Main Menu</p>
+            
+            <nav class="flex-1 px-4 overflow-y-auto space-y-1.5 no-scrollbar">
+                @foreach($currentNav as $item)
+                    <a href="{{ $item['url'] }}" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-[14px] font-semibold transition-all duration-200 {{ $item['active'] ? 'bg-primary text-white shadow-[0_4px_12px_rgba(59,130,246,0.3)]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}">
+                        <i class="ph {{ $item['icon'] }} text-[20px] {{ $item['active'] ? 'text-white ph-fill' : 'text-slate-400' }}"></i>
+                        {{ $item['name'] }}
                     </a>
                 @endforeach
             </nav>
 
-            <!-- Logout Bottom -->
-            <div class="p-4 mt-auto mb-4 border-t border-white/40">
-                <a href="{{ route('logout') }}" class="group flex items-center justify-between px-4 py-3.5 rounded-xl text-[14.5px] font-medium text-slate-600 hover:text-white transition-all duration-300 relative overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-r from-red-400 to-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0 shadow-md"></div>
-                    <div class="flex items-center gap-3.5 relative z-10">
-                        <svg class="w-[22px] h-[22px] text-red-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                        </svg>
-                        Logout
-                    </div>
+            <div class="p-4 mt-auto mb-2">
+                <a href="{{ route('logout') }}" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-[14px] font-semibold text-red-500 hover:bg-red-50 transition-colors">
+                    <i class="ph ph-sign-out text-[20px]"></i>
+                    Log Out
                 </a>
             </div>
         </aside>
 
-        <!-- Main Content area -->
-        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <!-- Main Content (Safe area) -->
+        <main class="flex-1 lg:ml-[280px] w-full relative max-w-full overflow-x-hidden p-4 sm:p-6 lg:p-8">
             
-            <!-- Top Navbar -->
-            <header class="h-[88px] flex items-center justify-between px-8 bg-white/20 backdrop-blur-sm border-b border-white/30 z-10">
-                
-                <div class="flex items-center gap-4">
-                    <button @click="sidebarOpen = !sidebarOpen" class="text-slate-600 hover:text-primary transition-colors focus:outline-none p-1 rounded-md bg-white/50 hover:bg-white/80">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            <!-- Welcome Header (Desktop Only) -->
+            <div class="hidden lg:flex items-center justify-between mb-8 animate-fade-in">
+                <div>
+                    <h2 class="text-[24px] font-bold text-slate-800 tracking-tight">@yield('header_title', 'Dashboard')</h2>
+                    <p class="text-[14px] font-medium text-slate-500 mt-1">Pantau transaksi dan operasional dengan mudah.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="w-[42px] h-[42px] rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-primary transition-colors shadow-sm relative">
+                        <i class="ph ph-bell text-[20px]"></i>
+                        <span class="absolute top-[10px] right-[10px] w-[8px] h-[8px] bg-red-500 rounded-full border border-white"></span>
                     </button>
-                    <h2 class="text-[22px] font-semibold text-slate-700 tracking-tight">@yield('header_title', 'Admin Dashboard')</h2>
-                </div>
-
-                <div class="flex items-center gap-6">
-                    <!-- Notification Bell & Avatar -->
-                    <div class="flex items-center gap-1">
-                        <div class="relative w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/50 transition-colors">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name ?? 'Admin') }}&background=6B9DF2&color=fff&rounded=true&bold=true" alt="Avatar" class="w-8 h-8 rounded-full object-cover">
-                        </div>
-                        
-                        <button class="relative w-10 h-10 translate-x-1 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                            <span class="absolute top-[6px] right-[6px] w-[14px] h-[14px] rounded-full bg-[#ED6A6A] border-2 border-white flex items-center justify-center text-[8px] font-bold text-white">5</span>
-                        </button>
-                    </div>
-
-                    <div class="flex items-center gap-1 cursor-pointer text-slate-600 hover:text-primary transition-colors pl-2">
-                        <span class="text-[13px] font-semibold">{{ ucfirst(Auth::user()->role ?? 'Admin') }}</span>
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Scrollable Page Content -->
-            <div class="flex-1 overflow-y-auto w-full">
-                <div class="p-8 pb-20">
-                    @yield('content')
+                    <a href="{{ route('order.create') }}" class="px-5 py-2.5 bg-primary text-white rounded-full font-bold text-[14px] shadow-[0_4px_12px_rgba(59,130,246,0.3)] hover:scale-105 transition-transform flex items-center gap-2">
+                        <i class="ph ph-plus text-lg"></i> Transaksi Baru
+                    </a>
                 </div>
             </div>
 
+            <!-- Global Alert Messages -->
+            <div class="animate-slide-up w-full max-w-7xl mx-auto">
+                @if(session('success'))
+                    <div class="mb-5 bg-green-50 border border-green-100 text-green-700 px-5 py-3.5 rounded-xl text-[13.5px] font-semibold flex items-center gap-3 animate-fade-in shadow-sm">
+                        <i class="ph-fill ph-check-circle text-[22px] text-green-500"></i>
+                        {{ session('success') }}
+                    </div>
+                @endif
+                @if(session('error'))
+                    <div class="mb-5 bg-red-50 border border-red-100 text-red-700 px-5 py-3.5 rounded-xl text-[13.5px] font-semibold flex items-center gap-3 animate-fade-in shadow-sm">
+                        <i class="ph-fill ph-warning-circle text-[22px] text-red-500"></i>
+                        {{ session('error') }}
+                    </div>
+                @endif
+
+                <!-- Yield actual page content here -->
+                @yield('content')
+            </div>
+
         </main>
+    </div>
+
+    <!-- Mobile Bottom Navigation (Visible only on lg:hidden) -->
+    <nav class="lg:hidden fixed bottom-0 inset-x-0 glass-nav z-40 pb-safe shadow-bottom-nav px-2 rounded-t-[20px]">
+        <div class="flex items-center justify-around h-[70px] max-w-md mx-auto relative">
+            
+            @foreach($bottomNavItems as $index => $item)
+                @php
+                    $isMiddleFab = false;
+                    if ($role == 'admin') {
+                        $isMiddleFab = ($index == 1);
+                    } elseif ($role == 'kasir') {
+                        $isMiddleFab = ($index == 0); // Inject exactly between Home and Order
+                    }
+                    $isMiddleOwnerSpace = ($index == 1) && ($role == 'owner');
+                @endphp
+
+                <!-- If role is owner and it's the middle, inject spacing -->
+                @if($isMiddleOwnerSpace)
+                    <div class="w-12 h-12 md:hidden"></div>
+                @endif
+                
+                <a href="{{ $item['url'] }}" class="flex flex-col items-center justify-center gap-1 w-16 group focus:outline-none">
+                    <div class="relative px-3 py-1 rounded-full transition-all duration-300 {{ $item['active'] && !request()->routeIs('order.create') ? 'bg-blue-50' : '' }}">
+                        <i class="ph {{ $item['icon'] }} text-[24px] transition-colors {{ $item['active'] && !request()->routeIs('order.create') ? 'text-primary ph-fill' : 'text-slate-400 group-hover:text-slate-600' }}"></i>
+                    </div>
+                    <span class="text-[10px] font-bold text-center {{ $item['active'] && !request()->routeIs('order.create') ? 'text-primary' : 'text-slate-400' }}">
+                        {{ $item['name'] }}
+                    </span>
+                </a>
+
+                <!-- If role is admin or kasir, inject the FAB Button right after the 1st item (index=0 output, then FAB, then index=1 output) wait! index==1 is actually the order page for kasir! -->
+                @if($isMiddleFab)
+                    <!-- Main center FAB -->
+                    <a href="{{ $middleCreateUrl }}" class="relative -top-6 flex flex-col items-center justify-center group focus:outline-none z-10 mx-2">
+                        <div class="w-[52px] h-[52px] rounded-full bg-primary flex items-center justify-center text-white shadow-[0_8px_20px_rgba(59,130,246,0.4)] transform transition-transform border-[4px] border-[#F8FAFC] active:scale-95">
+                            <i class="ph ph-plus text-[24px] font-bold"></i>
+                        </div>
+                    </a>
+                @endif
+            @endforeach
+
+            <!-- More Menu Burger -->
+            @if(count($currentNav) > 4)
+            <button @click="mobileMenuOpen = true" class="flex flex-col items-center justify-center gap-1 w-16 group focus:outline-none">
+                <div class="relative px-3 py-1 rounded-full transition-all duration-300">
+                    <i class="ph ph-squares-four text-[24px] text-slate-400 group-hover:text-slate-600"></i>
+                </div>
+                <span class="text-[10px] font-bold text-center text-slate-400">Menu</span>
+            </button>
+            @endif
+
+        </div>
+    </nav>
+
+    <!-- Mobile Offcanvas Menu (Bottom Sheet) -->
+    <div x-show="mobileMenuOpen" x-cloak class="lg:hidden fixed inset-0 z-50 flex flex-col justify-end" style="display: none;">
+        <!-- Backdrop -->
+        <div x-show="mobileMenuOpen" 
+             x-transition:enter="transition-opacity ease-linear duration-300" 
+             x-transition:enter-start="opacity-0" 
+             x-transition:enter-end="opacity-100" 
+             x-transition:leave="transition-opacity ease-linear duration-300" 
+             x-transition:leave-start="opacity-100" 
+             x-transition:leave-end="opacity-0" 
+             class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="mobileMenuOpen = false"></div>
+        
+        <!-- Sheet Content -->
+        <div x-show="mobileMenuOpen" 
+             x-transition:enter="transition ease-out duration-300 transform" 
+             x-transition:enter-start="translate-y-full" 
+             x-transition:enter-end="translate-y-0" 
+             x-transition:leave="transition ease-in duration-200 transform" 
+             x-transition:leave-start="translate-y-0" 
+             x-transition:leave-end="translate-y-full" 
+             class="relative w-full bg-white rounded-t-[30px] p-6 pb-12 shadow-2xl max-h-[75vh] flex flex-col">
+            
+            <!-- Handle bar -->
+            <div class="w-12 h-[5px] bg-slate-200 rounded-full mx-auto mb-6"></div>
+            
+            <h3 class="text-[18px] font-bold text-slate-800 mb-5 px-2 tracking-tight">Semua Fitur Menu</h3>
+            
+            <div class="flex-1 overflow-y-auto no-scrollbar pb-6 px-4 -mt-2">
+                <div class="grid grid-cols-4 md:grid-cols-5 gap-y-7 gap-x-4">
+                    @foreach($currentNav as $item)
+                    <a href="{{ $item['url'] }}" class="flex flex-col items-center gap-2 group active:scale-95 transition-transform">
+                        <div class="w-[65px] h-[65px] rounded-[18px] flex items-center justify-center transition-colors shadow-[0_2px_10px_rgba(0,0,0,0.03)] {{ $item['active'] ? 'bg-blue-50/80 border border-blue-200 text-primary' : 'bg-white border border-slate-100 text-slate-500 hover:bg-slate-50' }}">
+                            <i class="ph {{ $item['icon'] }} text-[28px] {{ $item['active'] ? 'ph-fill' : 'group-hover:text-primary' }}"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold text-center leading-tight mt-1 {{ $item['active'] ? 'text-primary' : 'text-slate-600' }}">{{ $item['name'] }}</span>
+                    </a>
+                    @endforeach
+                    
+                    <a href="{{ route('logout') }}" class="flex flex-col items-center gap-2 group active:scale-95 transition-transform">
+                        <div class="w-[65px] h-[65px] rounded-[18px] bg-red-50/50 border border-red-100 flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.03)] text-red-500 hover:bg-red-50 transition-colors">
+                            <i class="ph ph-sign-out text-[28px]"></i>
+                        </div>
+                        <span class="text-[11px] font-semibold text-center leading-tight mt-1 text-red-600">Log Out</span>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
     @stack('scripts')

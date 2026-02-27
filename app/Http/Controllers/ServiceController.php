@@ -18,6 +18,7 @@ class ServiceController extends Controller
     {
         $request->validate([
             'service_name' => 'required|string|max:255',
+            'icon' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'unit' => 'required|string|max:50',
@@ -32,6 +33,7 @@ class ServiceController extends Controller
     {
         $request->validate([
             'service_name' => 'required|string|max:255',
+            'icon' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'unit' => 'required|string|max:50',

@@ -69,65 +69,95 @@
             @csrf
 
             <!-- SECTION 1: PELANGGAN -->
-            <div class="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-sm mb-6">
+            <div class="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-sm mb-6" x-data="customerAutocomplete()">
                 <h3 class="text-lg font-bold text-slate-700 mb-5 border-b border-slate-200/60 pb-3">1. Data Pelanggan</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                    <!-- Autocomplete Wrapper -->
+                    <div class="relative">
                         <label class="block text-[14px] font-bold text-slate-600 mb-2">Nama Pelanggan <span class="text-red-400">*</span></label>
-                        <input type="text" name="customer_name" required value="{{ old('customer_name') }}" placeholder="Ketik nama pelanggan..." class="w-full h-12 rounded-[14px] input-cloud px-4 text-[14.5px] font-medium text-slate-700 placeholder-slate-400">
+                        <input type="text" name="customer_name" required x-model="search" @input="filterCustomers" @focus="showDropdown = true" @click.away="showDropdown = false" placeholder="Ketik nama pelanggan..." class="w-full h-12 rounded-[14px] input-cloud px-4 text-[14.5px] font-medium text-slate-700 placeholder-slate-400" autocomplete="off">
+                        
+                        <!-- Dropdown Options -->
+                        <div x-show="showDropdown && filteredCustomers.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 shadow-xl rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
+                            <template x-for="cust in filteredCustomers" :key="cust.customer_name + cust.customer_phone">
+                                <div @click="selectCustomer(cust)" class="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0 transition-colors">
+                                    <div class="font-bold text-slate-700 text-[14px]" x-text="cust.customer_name"></div>
+                                    <div class="text-[12px] text-slate-400 font-medium" x-text="cust.customer_phone ? '+62' + cust.customer_phone.toString().replace(/^0+/, '') : 'Tanpa No HP'"></div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-[14px] font-bold text-slate-600 mb-2">No. Handphone</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">+62</div>
-                            <input type="text" name="customer_phone" value="{{ old('customer_phone') }}" placeholder="8123xxxx" class="w-full h-12 rounded-[14px] input-cloud pl-12 pr-4 text-[14.5px] font-medium text-slate-700 placeholder-slate-400">
+                        <div class="relative flex items-center">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400 z-10">+62</div>
+                            <input type="text" name="customer_phone" x-model="phone" placeholder="8123xxxx" class="w-full h-12 rounded-[14px] input-cloud pl-12 pr-4 text-[14.5px] font-medium text-slate-700 placeholder-slate-400">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- SECTION 2: LAYANAN & BERAT -->
+            <!-- SECTION 2: KERANJANG LAYANAN (MULTIPLE ITEMS) -->
             <div class="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-sm mb-6">
-                <h3 class="text-lg font-bold text-slate-700 mb-5 border-b border-slate-200/60 pb-3">2. Detail Layanan</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <!-- Service -->
-                    <div>
-                        <label class="block text-[14px] font-bold text-slate-600 mb-2">Pilih Layanan <span class="text-red-400">*</span></label>
-                        <div class="relative">
-                        <select name="service_name" x-model="service" @change="calculate()" required class="w-full h-12 rounded-[14px] input-cloud pl-4 pr-10 text-[14.5px] font-medium text-slate-700 appearance-none cursor-pointer">
-                            <option value="" data-price="0">-- Pilih Layanan --</option>
-                            @foreach($services as $svc)
-                                <option value="{{ $svc->service_name }}" data-price="{{ $svc->price }}" {{ old('service_name') == $svc->service_name ? 'selected' : '' }}>
-                                    {{ $svc->service_name }} (Rp {{ number_format($svc->price, 0, ',', '.') }}/{{ $svc->unit }})
-                                </option>
-                            @endforeach
-                        </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Weight / Qty -->
-                    <div>
-                        <label class="block text-[14px] font-bold text-slate-600 mb-2">Berat / Qty <span class="text-red-400">*</span></label>
-                        <div class="relative">
-                            <input type="number" step="0.1" name="weight" x-model="weight" @input="calculate()" required placeholder="0" class="w-full h-12 rounded-[14px] input-cloud px-4 text-[14.5px] font-medium text-slate-700">
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 font-bold text-[13px]">
-                                Kg / Pcs
-                            </div>
-                        </div>
-                    </div>
+                <div class="flex justify-between items-center mb-5 border-b border-slate-200/60 pb-3">
+                    <h3 class="text-lg font-bold text-slate-700">2. Keranjang Layanan</h3>
+                    <button type="button" @click="addItem()" class="px-4 py-2 bg-[#F0F5FF] text-[#5B8DEF] text-[13px] font-bold rounded-xl hover:bg-[#5B8DEF] hover:text-white transition-all flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                        Tambah Item
+                    </button>
+                </div>
+                
+                <div class="space-y-4 mb-6">
+                    <template x-for="(item, index) in items" :key="index">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50 border border-slate-100 p-4 rounded-2xl relative group">
+                            <!-- Remove Button -->
+                            <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="absolute -top-2 -right-2 w-7 h-7 bg-red-100 text-red-500 rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
 
-                    <!-- Est Finish -->
-                    <div>
-                        <label class="block text-[14px] font-bold text-slate-600 mb-2">Estimasi Selesai <span class="text-red-400">*</span></label>
-                        <input type="datetime-local" name="estimated_finish" x-model="estFinish" required class="w-full h-12 rounded-[14px] input-cloud px-4 text-[14.5px] font-medium text-slate-700 text-slate-500">
-                    </div>
+                            <!-- Service Choice -->
+                            <div class="md:col-span-5">
+                                <label class="block text-[13px] font-bold text-slate-600 mb-2">Pilih Layanan <span class="text-red-400">*</span></label>
+                                <select x-model="item.service_id" @change="onServiceChange(index)" :name="'items['+index+'][service_name]'" required class="w-full h-11 rounded-[12px] input-cloud px-3 text-[13.5px] font-medium text-slate-700">
+                                    <option value="">-- Pilih --</option>
+                                    @foreach($services as $svc)
+                                        <option value="{{ $svc->service_name }}" data-price="{{ $svc->price }}" data-unit="{{ $svc->unit }}">
+                                            {{ $svc->service_name }} (Rp {{ number_format($svc->price, 0, ',', '.') }}/{{ $svc->unit }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Qty/Weight -->
+                            <div class="md:col-span-3">
+                                <label class="block text-[13px] font-bold text-slate-600 mb-2">Qty / Berat <span class="text-red-400">*</span></label>
+                                <div class="relative">
+                                    <input type="number" step="0.01" x-model="item.qty" @input="calculate()" :name="'items['+index+'][qty]'" required placeholder="1" class="w-full h-11 rounded-[12px] input-cloud pl-3 pr-12 text-[13.5px] font-medium text-slate-700">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 font-bold text-[12px]" x-text="item.unit || '-'">
+                                    </div>
+                                    <input type="hidden" :name="'items['+index+'][unit]'" :value="item.unit">
+                                </div>
+                            </div>
+
+                            <!-- Subtotal display -->
+                            <div class="md:col-span-4 pl-2">
+                                <label class="block text-[12px] font-bold text-slate-400 mb-1">Subtotal</label>
+                                <div class="text-[15px] font-black text-slate-700">Rp <span x-text="formatTotal(item.subtotal)">0</span></div>
+                                <input type="hidden" :name="'items['+index+'][price]'" :value="item.price">
+                                <input type="hidden" :name="'items['+index+'][subtotal]'" :value="item.subtotal">
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Est Finish (Global for Order) -->
+                <div class="mb-5">
+                    <label class="block text-[14px] font-bold text-slate-600 mb-2">Estimasi Selesai Keseluruhan <span class="text-red-400">*</span></label>
+                    <input type="datetime-local" name="estimated_finish" x-model="estFinish" required class="w-full h-12 rounded-[14px] input-cloud px-4 text-[14.5px] font-medium text-slate-700 sm:w-1/2">
                 </div>
 
                 <div class="w-full">
-                    <label class="block text-[14px] font-bold text-slate-600 mb-2">Detail Item / Catatan (Opsional)</label>
+                    <label class="block text-[14px] font-bold text-slate-600 mb-2">Detail Paket / Catatan (Opsional)</label>
                     <textarea name="notes" placeholder="Contoh: 2 Kemeja putih, 1 celana jeans. Tolong pisahkan luntur..." class="w-full h-20 rounded-[14px] input-cloud p-4 text-[14.5px] font-medium text-slate-700 placeholder-slate-400 align-top resize-none"></textarea>
                 </div>
             </div>
@@ -223,21 +253,78 @@
 </div>
 
 <script>
+function customerAutocomplete() {
+    return {
+        customers: @json($customers->unique('customer_name')->values()->all() ?? []),
+        search: '{{ old('customer_name') }}',
+        phone: '{{ old('customer_phone') }}',
+        showDropdown: false,
+        
+        get filteredCustomers() {
+            if (this.search === '') return [];
+            return this.customers.filter(c => c.customer_name.toLowerCase().includes(this.search.toLowerCase())).slice(0, 10);
+        },
+        
+        filterCustomers() {
+            this.showDropdown = true;
+        },
+        
+        selectCustomer(cust) {
+            this.search = cust.customer_name;
+            let cleanPhone = cust.customer_phone ? cust.customer_phone.toString().replace(/^0+/, '') : '';
+            if (cleanPhone.startsWith('62')) cleanPhone = cleanPhone.substring(2);
+            this.phone = cleanPhone;
+            this.showDropdown = false;
+        }
+    }
+}
+
 function orderCalculator() {
     return {
-        service: '',
-        weight: '',
+        items: [{ service_id: '', qty: 1, unit: '', price: 0, subtotal: 0 }],
         discount: 0,
         tax: 0,
         estFinish: '',
         
+        addItem() {
+            this.items.push({ service_id: '', qty: 1, unit: '', price: 0, subtotal: 0 });
+            this.calculate();
+        },
+        
+        removeItem(index) {
+            this.items.splice(index, 1);
+            this.calculate();
+        },
+        
+        onServiceChange(index) {
+            const el = document.querySelector(`select[name="items[${index}][service_name]"]`);
+            if(el && el.selectedIndex > 0) {
+                const opt = el.options[el.selectedIndex];
+                this.items[index].price = parseFloat(opt.getAttribute('data-price') || 0);
+                this.items[index].unit = opt.getAttribute('data-unit') || 'Pcs';
+                
+                // Auto estimate on first item
+                if (index === 0 && !this.estFinish) {
+                    let svcName = opt.value || '';
+                    let d = new Date();
+                    if(svcName.includes('Satuan') || svcName.includes('Sepatu') || svcName.includes('Bed Cover')) {
+                        d.setDate(d.getDate() + 3);
+                    } else {
+                        d.setDate(d.getDate() + 2);
+                    }
+                    const offset = d.getTimezoneOffset();
+                    const adjustedDate = new Date(d.getTime() - (offset*60*1000));
+                    this.estFinish = adjustedDate.toISOString().slice(0,16);
+                }
+            } else {
+                this.items[index].price = 0;
+                this.items[index].unit = '';
+            }
+            this.calculate();
+        },
+        
         get subtotal() {
-            if (!this.service || !this.weight) return 0;
-            const selectEl = document.querySelector('select[name="service_name"]');
-            if(!selectEl) return 0;
-            const option = selectEl.options[selectEl.selectedIndex];
-            const pricePerUnit = parseFloat(option.getAttribute('data-price') || 0);
-            return pricePerUnit * parseFloat(this.weight);
+            return this.items.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
         },
 
         get taxAmount() {
@@ -254,27 +341,18 @@ function orderCalculator() {
         },
 
         formatTotal(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            return num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") : "0";
         },
 
         calculate() {
-            // Recalculate estimated finish automatically based on service
-            if (this.service && !this.estFinish) {
-                let d = new Date();
-                if(this.service.includes('Satuan') || this.service.includes('Sepatu') || this.service.includes('Bed Cover')) {
-                    d.setDate(d.getDate() + 3); // 3 days
-                } else {
-                    d.setDate(d.getDate() + 2); // default 2 days
-                }
-                // format native datetime-local YYYY-MM-DDThh:mm
-                const offset = d.getTimezoneOffset()
-                const adjustedDate = new Date(d.getTime() - (offset*60*1000))
-                this.estFinish = adjustedDate.toISOString().slice(0,16);
-            }
+            this.items.forEach(item => {
+                let p = parseFloat(item.price) || 0;
+                let q = parseFloat(item.qty) || 0;
+                item.subtotal = p * q;
+            });
         },
 
         init() {
-            // Run initial calc if old data exists
             setTimeout(() => this.calculate(), 100);
         }
     }

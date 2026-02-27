@@ -64,9 +64,11 @@ class WhatsappNotificationService
         $message .= "Terima kasih telah mencuci di *{$storeName}*.\n";
         $message .= "Berikut ringkasan pesanan anda:\n\n";
         $message .= "🧾 *NO TRX:* {$order->order_code}\n";
-        $message .= "👕 *LAYANAN:* {$order->service_name}\n";
-        $message .= "⚖️ *Diterima:* " . ($order->weight ?? 1) . " (Kg/Satuan)\n";
-        $message .= "💰 *TOTAL:* Rp {$totalHarga}\n";
+        $message .= "👕 *LAYANAN YANG DIPESAN:*\n";
+        foreach ($order->items as $item) {
+            $message .= "  - {$item->service_name} ({$item->qty} {$item->unit})\n";
+        }
+        $message .= "\n💰 *TOTAL:* Rp {$totalHarga}\n";
         $message .= "💳 *STATUS BAYAR:* {$order->payment_status}\n";
         $message .= "📦 *STATUS BARANG:* {$order->status}\n\n";
 

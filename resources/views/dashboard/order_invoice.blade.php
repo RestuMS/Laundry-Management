@@ -163,17 +163,16 @@
         <div class="divider-solid"></div>
 
         <!-- Bought Items -->
-        <div class="mt-2 text-left font-bold uppercase" style="font-size: 12px;">
-            {{ $order->service_name }}
-        </div>
-        <div class="flex mt-1">
-            @php
-                $qty = $order->weight ?? 1;
-                $unit = str_contains(strtolower($order->service_name), 'sepatu') ? 'Psg' : (str_contains(strtolower($order->service_name), 'satuan') ? 'Pcs' : 'Kg');
-                $pricePerUnit = $order->total_price / max(1, $qty);
-            @endphp
-            <span>{{ $qty }} {{ $unit }} x {{ number_format($pricePerUnit, 0, ',', '.') }}</span>
-            <span class="font-bold">{{ number_format($order->total_price, 0, ',', '.') }}</span>
+        <div class="mt-2 text-left">
+            @foreach($order->items as $item)
+                <div class="font-bold uppercase mt-2 mb-1" style="font-size: 12px; line-height: 1.1;">
+                    {{ $item->service_name }}
+                </div>
+                <div class="flex" style="font-size: 11px;">
+                    <span>{{ $item->qty }} {{ $item->unit }} x {{ number_format($item->price, 0, ',', '.') }}</span>
+                    <span class="font-bold">{{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                </div>
+            @endforeach
         </div>
         
         @if($order->package_detail)
@@ -224,6 +223,20 @@
         </div>
         @endif
 
+        <!-- QR Code Barcode untuk Scanner Kasir -->
+        <div class="mt-4 mb-2 flex justify-center">
+            <div class="p-1" style="border: 1px dashed #ccc; border-radius: 4px;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data={{ urlencode($order->order_code) }}" 
+                     alt="QR Code Order" 
+                     class="w-[110px] h-[110px]" 
+                     style="display: block; width: 110px; height: 110px;"
+                     onload="window.qrLoaded = true; checkPrint();" />
+            </div>
+        </div>
+        <div class="text-center font-bold" style="font-size: 12px; margin-bottom: 8px;">
+            {{ $order->order_code }}
+        </div>
+
         <!-- T&C -->
         <div class="text-center mt-4" style="font-size: 10px;">
             TERIMA KASIH<br>
@@ -244,11 +257,19 @@
                 window.print();
             }
         });
+
+        // Wait for image loading
+        window.qrLoaded = false;
+        function checkPrint() {
+            if (window.qrLoaded) {
+                setTimeout(() => window.print(), 300);
+            }
+        }
         
-        // Auto show dialog after fully loaded
+        // Fallback auto show dialog after slowly fully loaded
         setTimeout(() => {
-            window.print();
-        }, 500);
+            if (!window.qrLoaded) window.print();
+        }, 1500);
     </script>
 </body>
 </html>

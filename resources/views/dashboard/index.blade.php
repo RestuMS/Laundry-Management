@@ -166,7 +166,9 @@
                             <img src="https://ui-avatars.com/api/?name={{ urlencode($ro->customer_name) }}&background=EAF4FF&color=5B8DEF&rounded=true" alt="Avatar" class="w-8 h-8 rounded-full shadow-sm border border-white">
                             {{ $ro->customer_name }}
                         </td>
-                        <td class="py-3.5 px-2 text-slate-500 font-medium">{{ $ro->service_name }}</td>
+                        <td class="py-3.5 px-2 text-slate-500 font-medium">
+                            {{ $ro->items->count() > 0 ? $ro->items->pluck('service_name')->join(', ') : $ro->service_name }}
+                        </td>
                         <td class="py-3.5 px-2">
                             @if($ro->status == 'Selesai' || $ro->status == 'Diambil')
                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#59C98C]/10 text-[#59C98C] border border-[#59C98C]/20">

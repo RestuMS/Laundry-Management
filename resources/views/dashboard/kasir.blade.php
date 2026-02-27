@@ -56,10 +56,10 @@
 </style>
 
 <!-- Top Action Header -->
-<div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-5" x-data="{ loading: true }" x-init="setTimeout(() => loading = false, 800)">
+<div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-5" x-data="{ loading: true, searchQuery: {!! json_encode(request('search', '')) !!} }" x-init="setTimeout(() => loading = false, 800)">
     
     <!-- Large Search Input -->
-    <div class="relative w-full max-w-3xl glass-card rounded-[20px] focus-within:ring-4 focus-within:ring-primary/20 transition-all shadow-sm group border border-white/80" style="height: 60px;">
+    <form action="{{ route('kasir') }}" method="GET" class="relative w-full max-w-3xl glass-card rounded-[20px] focus-within:ring-4 focus-within:ring-primary/20 transition-all shadow-sm group border border-white/80" style="height: 60px;" x-ref="searchForm">
         <template x-if="loading">
             <div class="h-full w-full rounded-[20px] skeleton"></div>
         </template>
@@ -68,13 +68,13 @@
                 <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-primary">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-                <input type="text" placeholder="Cari Pelanggan, No WhatsApp, atau ID Order (Shift + K)..." class="block w-full h-full pl-16 pr-5 bg-transparent border-none focus:ring-0 text-[15px] text-slate-700 placeholder-slate-400 font-medium" />
+                <input type="text" name="search" x-model="searchQuery" @input.debounce.500ms="$refs.searchForm.submit()" placeholder="Cari trx, nama pelanggan, atau hp..." class="block w-full h-full pl-16 pr-5 bg-transparent border-none focus:ring-0 text-[15px] text-slate-700 placeholder-slate-400 font-medium" />
                 <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
                     <div class="px-2 py-1 text-[11px] font-bold text-slate-400 bg-slate-100 rounded-lg border border-slate-200 shadow-sm group-focus-within:opacity-0 transition-opacity">/</div>
                 </div>
             </div>
         </template>
-    </div>
+    </form>
 
     <!-- Main Add Order Button -->
     <div class="w-full lg:w-auto flex-shrink-0" style="height: 60px;">
@@ -219,7 +219,7 @@
                         <td class="py-4 px-4 pl-6">
                             <div class="flex items-center gap-4">
                                 <div class="relative">
-                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($order->customer_name) }}&background={{ clone $bgColor }}&color=fff&rounded=true&bold=true" alt="Avatar" class="w-10 h-10 rounded-full shadow-sm ring-2 ring-white">
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($order->customer_name) }}&background={{ $bgColor }}&color=fff&rounded=true&bold=true" alt="Avatar" class="w-10 h-10 rounded-full shadow-sm ring-2 ring-white">
                                     @if($isHighPriority)
                                     <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2 border-white"></span>
                                     @endif
@@ -232,8 +232,9 @@
                         </td>
                         <td class="py-4 px-4 text-slate-600">
                             <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-[#' . substr(md5($order->service_name), 0, 6) . '] shadow-sm"></span>
-                                {{ $order->service_name }} <span class="text-slate-400 font-medium text-[13px]">({{ $order->weight ? $order->weight . ' Kg/Pcs' : '' }})</span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-[#' . substr(md5($order->items->first()?->service_name ?? $order->service_name), 0, 6) . '] shadow-sm"></span>
+                                {{ $order->items->count() > 0 ? $order->items->pluck('service_name')->join(', ') : $order->service_name }} 
+                                <span class="text-slate-400 font-medium text-[13px]">({{ $order->items->count() > 0 ? $order->items->sum('qty') . ' Qty' : ($order->weight ? $order->weight . ' Kg/Pcs' : '') }})</span>
                             </div>
                         </td>
                         <td class="py-4 px-4">
@@ -291,4 +292,89 @@
         @endif
     </template>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let barcodeBuffer = '';
+        let lastKeyTime = Date.now();
+        let isProcessing = false;
+
+        window.addEventListener('keydown', function(e) {
+            // Ignore if we're in a specific textarea or currently processing
+            if (e.target.tagName === 'TEXTAREA' || isProcessing) return;
+            
+            // If they are focusing on the search bar, it's fine, the buffer will still catch it
+            // or we could just capture the search bar input. The beauty of global buffer is that it works anywhere.
+
+            const currentTime = Date.now();
+            
+            // Scanner acts like a fast typist. If delay between keystrokes > 100ms, it's a human typing.
+            if (currentTime - lastKeyTime > 100) {
+                barcodeBuffer = '';
+            }
+
+            if (e.key === 'Enter' && barcodeBuffer.length > 3) {
+                // Potential barcode scanned
+                e.preventDefault();
+                processBarcodeScan(barcodeBuffer.trim());
+                barcodeBuffer = '';
+            } else if (e.key !== 'Shift' && e.key !== 'Control' && e.key !== 'Alt') {
+                barcodeBuffer += e.key;
+            }
+
+            lastKeyTime = currentTime;
+        });
+
+        function processBarcodeScan(code) {
+            isProcessing = true;
+            
+            Swal.fire({
+                title: 'Barcode Terdeteksi!',
+                text: `Memproses order ${code}...`,
+                icon: 'info',
+                timer: 1000,
+                showConfirmButton: false,
+                willClose: () => {
+                    fetch('{{ route('order.scan') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ order_code: code })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        isProcessing = false;
+                        if(data.success) {
+                            Swal.fire({
+                                title: 'Order Selesai!',
+                                text: data.message,
+                                icon: 'success',
+                                confirmButtonColor: '#3B82F6'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Oops!',
+                                text: data.message,
+                                icon: 'warning',
+                                confirmButtonColor: '#F59E0B'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        isProcessing = false;
+                        Swal.fire('Error', 'Terjadi kesalahan sistem', 'error');
+                        console.error(error);
+                    });
+                }
+            });
+        }
+    });
+</script>
+@endpush
+
 @endsection

@@ -8,4 +8,8 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    server: {
+        host: '127.0.0.1', // Ensure IPv4 binding for fast Windows localhost
+        port: 5173,
+    }
 });

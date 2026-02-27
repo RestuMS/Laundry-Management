@@ -25,8 +25,8 @@ class OrderTrackingService
         return [
             'order_code' => $order->order_code,
             'customer_name' => $order->customer_name,
-            'service_name' => $order->service_name,
-            'weight' => $order->weight,
+            'service_name' => $order->items->count() > 0 ? $order->items->pluck('service_name')->implode(', ') : $order->service_name,
+            'weight' => $order->items->count() > 0 ? $order->items->sum('qty') : $order->weight,
             'status' => $order->status,
             'total_price' => $order->total_price,
             'payment_status' => $order->payment_status,

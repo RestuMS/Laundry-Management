@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Expense;
 use Carbon\Carbon;
 
@@ -34,7 +35,7 @@ class ReportController extends Controller
         }
 
         // Bar Chart (Top Services)
-        $topServices = tap(Order::selectRaw('service_name, count(*) as total')
+        $topServices = tap(OrderItem::selectRaw('service_name, count(*) as total')
             ->groupBy('service_name')
             ->orderByDesc('total')
             ->take(5)
@@ -119,7 +120,7 @@ class ReportController extends Controller
                 fputcsv($file, array(
                     'Pemasukan Order',
                     Carbon::parse($order->created_at)->format('Y-m-d H:i'),
-                    $order->service_name . ' (' . $order->customer_name . ')',
+                    $order->items->pluck('service_name')->join(', ') . ' (' . $order->customer_name . ')',
                     $order->total_price,
                     0
                 ), ';');
