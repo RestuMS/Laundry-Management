@@ -72,17 +72,28 @@
             <div class="bg-white/50 rounded-2xl p-6 border border-white/60 shadow-sm mb-6" x-data="customerAutocomplete()">
                 <h3 class="text-lg font-bold text-slate-700 mb-5 border-b border-slate-200/60 pb-3">1. Data Pelanggan</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                    <!-- Hidden customer_id -->
+                    <input type="hidden" name="customer_id" x-model="customerId">
+                    
                     <!-- Autocomplete Wrapper -->
                     <div class="relative">
                         <label class="block text-[14px] font-bold text-slate-600 mb-2">Nama Pelanggan <span class="text-red-400">*</span></label>
                         <input type="text" name="customer_name" required x-model="search" @input="filterCustomers" @focus="showDropdown = true" @click.away="showDropdown = false" placeholder="Ketik nama pelanggan..." class="w-full h-12 rounded-[14px] input-cloud px-4 text-[14.5px] font-medium text-slate-700 placeholder-slate-400" autocomplete="off">
                         
+                        <!-- Selected Customer Tag -->
+                        <div x-show="customerId" x-cloak class="absolute right-3 top-[42px] bg-blue-50 text-blue-600 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                            Pelanggan Terdaftar
+                        </div>
+                        
                         <!-- Dropdown Options -->
                         <div x-show="showDropdown && filteredCustomers.length > 0" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-slate-200 shadow-xl rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
-                            <template x-for="cust in filteredCustomers" :key="cust.customer_name + cust.customer_phone">
+                            <template x-for="cust in filteredCustomers" :key="cust.id">
                                 <div @click="selectCustomer(cust)" class="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0 transition-colors">
-                                    <div class="font-bold text-slate-700 text-[14px]" x-text="cust.customer_name"></div>
-                                    <div class="text-[12px] text-slate-400 font-medium" x-text="cust.customer_phone ? '+62' + cust.customer_phone.toString().replace(/^0+/, '') : 'Tanpa No HP'"></div>
+                                    <div class="font-bold text-slate-700 text-[14px]" x-text="cust.full_name"></div>
+                                    <div class="text-[12px] text-slate-400 font-medium flex items-center gap-1">
+                                        <span x-text="cust.phone ? cust.phone : 'Tanpa No HP'"></span>
+                                        <span class="bg-green-50 text-green-600 px-1.5 py-0.5 rounded text-[10px] font-bold">Terdaftar</span>
+                                    </div>
                                 </div>
                             </template>
                         </div>
@@ -255,23 +266,27 @@
 <script>
 function customerAutocomplete() {
     return {
-        customers: @json($customers->unique('customer_name')->values()->all() ?? []),
+        customers: @json($customers->values()->all() ?? []),
         search: '{{ old('customer_name') }}',
         phone: '{{ old('customer_phone') }}',
+        customerId: '{{ old('customer_id') }}',
         showDropdown: false,
         
         get filteredCustomers() {
             if (this.search === '') return [];
-            return this.customers.filter(c => c.customer_name.toLowerCase().includes(this.search.toLowerCase())).slice(0, 10);
+            return this.customers.filter(c => c.full_name.toLowerCase().includes(this.search.toLowerCase())).slice(0, 10);
         },
         
         filterCustomers() {
             this.showDropdown = true;
+            // Clear customerId when typing manually (no longer matches selected customer)
+            this.customerId = '';
         },
         
         selectCustomer(cust) {
-            this.search = cust.customer_name;
-            let cleanPhone = cust.customer_phone ? cust.customer_phone.toString().replace(/^0+/, '') : '';
+            this.search = cust.full_name;
+            this.customerId = cust.id;
+            let cleanPhone = cust.phone ? cust.phone.toString().replace(/^0+/, '') : '';
             if (cleanPhone.startsWith('62')) cleanPhone = cleanPhone.substring(2);
             this.phone = cleanPhone;
             this.showDropdown = false;

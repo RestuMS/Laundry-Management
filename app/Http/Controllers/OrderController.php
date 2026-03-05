@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\Order;
-
+use App\Models\OrderPhoto;
 use App\Models\Service;
 use App\Models\Customer;
 use App\Models\Inventory;
 use App\Services\WhatsappNotificationService;
+use App\Http\Requests\StoreOrderRequest;
+use App\Http\Requests\UpdateOrderRequest;
+use Illuminate\Support\Facades\Storage;
 
 class OrderController extends Controller
 {
@@ -17,7 +20,7 @@ class OrderController extends Controller
     {
         $search = $request->input('search');
 
-        $orders = Order::latest()
+        $orders = Order::with(['items', 'photos'])->latest()
             ->when($search, function ($query, $search) {
                 return $query->where('customer_name', 'like', "%{$search}%")
                              ->orWhere('order_code', 'like', "%{$search}%")
@@ -33,53 +36,65 @@ class OrderController extends Controller
     {
         $services = Service::all();
         
-        // Fetch unique customer names and phones for autocomplete suggestions
-        $customers = Order::select('customer_name', 'customer_phone')
-            ->distinct()
-            ->orderBy('customer_name')
+        // Fetch customers from customers table for autocomplete suggestions
+        $customers = Customer::select('id', 'full_name', 'phone')
+            ->orderBy('full_name')
             ->get();
             
-        // Actually, we will just use a modal or simple view for creating, but we can return a view if needed.
         return view('dashboard.order_create', compact('services', 'customers'));
     }
 
-    public function store(Request $request)
+    public function store(StoreOrderRequest $request)
     {
-        $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'customer_phone' => 'nullable|string|max:20',
-            'estimated_finish' => 'nullable|date',
-            'total_price' => 'required|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0',
-            'tax' => 'nullable|numeric|min:0',
-            'payment_method' => 'nullable|string|max:255',
-            'payment_status' => 'required|in:Belum Bayar,DP,Lunas',
-            'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.service_name' => 'required|string|max:255',
-            'items.*.qty' => 'required|numeric|min:0.01',
-            'items.*.unit' => 'required|string',
-            'items.*.price' => 'required|numeric|min:0',
-            'items.*.subtotal' => 'required|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         $orderCode = 'ORD-' . strtoupper(uniqid());
 
+        // Find or create Customer record
+        $customerId = $validated['customer_id'] ?? null;
+        
+        if (!$customerId && !empty($validated['customer_name'])) {
+            // Try to find existing customer by name + phone
+            $customer = Customer::where('full_name', $validated['customer_name'])
+                ->when($validated['customer_phone'] ?? null, function ($q, $phone) {
+                    return $q->where('phone', $phone);
+                })
+                ->first();
+
+            if (!$customer) {
+                // Create new customer automatically
+                $customer = Customer::create([
+                    'full_name' => $validated['customer_name'],
+                    'phone' => $validated['customer_phone'] ?? null,
+                    'status' => 'Reguler',
+                ]);
+            }
+
+            $customerId = $customer->id;
+        }
+
+        // Observer will handle: recording status history + sending WA notification
         $order = Order::create([
             'order_code' => $orderCode,
-            'customer_name' => $request->customer_name,
-            'customer_phone' => $request->customer_phone,
-            'estimated_finish' => $request->estimated_finish,
+            'customer_id' => $customerId,
+            'customer_name' => $validated['customer_name'],
+            'customer_phone' => $validated['customer_phone'] ?? null,
+            'estimated_finish' => $validated['estimated_finish'] ?? null,
             'status' => 'Diterima',
-            'total_price' => $request->total_price,
-            'discount' => $request->discount ?? 0,
-            'tax' => $request->tax ?? 0,
-            'payment_method' => $request->payment_method,
-            'payment_status' => $request->payment_status,
-            'notes' => $request->notes,
+            'total_price' => $validated['total_price'],
+            'discount' => $validated['discount'] ?? 0,
+            'tax' => $validated['tax'] ?? 0,
+            'payment_method' => $validated['payment_method'] ?? null,
+            'payment_status' => $validated['payment_status'],
+            'notes' => $validated['notes'] ?? null,
         ]);
 
-        foreach ($request->items as $item) {
+        // Increment customer total_orders
+        if ($customerId) {
+            Customer::where('id', $customerId)->increment('total_orders');
+        }
+
+        foreach ($validated['items'] as $item) {
             $order->items()->create([
                 'service_name' => $item['service_name'],
                 'qty' => $item['qty'],
@@ -88,15 +103,13 @@ class OrderController extends Controller
                 'subtotal' => $item['subtotal'],
             ]);
             
-            // Deduct inventory dynamically based on qty if logic needs it, basic usage rule per qty
+            // Deduct inventory dynamically based on qty
             $inventories = Inventory::where('usage_per_kg', '>', 0)->get();
             foreach ($inventories as $inv) {
                 $inv->stock = max(0, $inv->stock - ($inv->usage_per_kg * $item['qty']));
                 $inv->save();
             }
         }
-
-        app(WhatsappNotificationService::class)->sendTrackingUpdate($order);
 
         return redirect()->route('order.index')->with('success', 'Order berhasil ditambahkan! Notifikasi WhatsApp otomatis dikirim.');
     }
@@ -107,32 +120,15 @@ class OrderController extends Controller
         return view('dashboard.order_edit', compact('order', 'services'));
     }
 
-    public function update(Request $request, Order $order)
+    public function update(UpdateOrderRequest $request, Order $order)
     {
-        $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'customer_phone' => 'nullable|string|max:20',
-            'estimated_finish' => 'nullable|date',
-            'total_price' => 'required|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0',
-            'tax' => 'nullable|numeric|min:0',
-            'payment_method' => 'nullable|string|max:255',
-            'status' => 'required|string',
-            'payment_status' => 'required|in:Belum Bayar,DP,Lunas',
-            'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.service_name' => 'required|string|max:255',
-            'items.*.qty' => 'required|numeric|min:0.01',
-            'items.*.unit' => 'required|string',
-            'items.*.price' => 'required|numeric|min:0',
-            'items.*.subtotal' => 'required|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
-        $oldStatus = $order->status;
-        $order->update($request->except('items'));
+        // Observer will auto-detect status change and send WA + record history
+        $order->update(collect($validated)->except('items')->toArray());
         
-        $order->items()->delete(); // Recreate items for simplicity on update
-        foreach ($request->items as $item) {
+        $order->items()->delete();
+        foreach ($validated['items'] as $item) {
             $order->items()->create([
                 'service_name' => $item['service_name'],
                 'qty' => $item['qty'],
@@ -142,11 +138,13 @@ class OrderController extends Controller
             ]);
         }
 
-        if ($oldStatus !== $order->status) {
-            app(WhatsappNotificationService::class)->sendTrackingUpdate($order);
+        $statusChanged = $order->wasChanged('status');
+        $msg = 'Order berhasil diupdate!';
+        if ($statusChanged) {
+            $msg .= ' Notifikasi WhatsApp otomatis dikirim karena status berubah.';
         }
 
-        return redirect()->route('order.index')->with('success', 'Order berhasil diupdate! Notifikasi WhatsApp otomatis dikirim jika status berubah.');
+        return redirect()->route('order.index')->with('success', $msg);
     }
 
     public function updateStatus(Request $request, Order $order)
@@ -155,14 +153,14 @@ class OrderController extends Controller
             'status' => 'required|string'
         ]);
 
-        $oldStatus = $order->status;
+        // Observer automatically handles WA notification + status history recording
         $order->update(['status' => $request->status]);
 
-        if ($oldStatus !== $order->status) {
-            app(WhatsappNotificationService::class)->sendTrackingUpdate($order);
-        }
-
-        return response()->json(['success' => true, 'message' => 'Status berhasil diupdate!', 'new_status' => $order->status]);
+        return response()->json([
+            'success' => true, 
+            'message' => 'Status berhasil diupdate! Notifikasi WA otomatis terkirim.', 
+            'new_status' => $order->status
+        ]);
     }
 
     public function updatePaymentStatus(Request $request, Order $order)
@@ -208,20 +206,137 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Pesanan ini sudah pernah Diambil sebelumnya.']);
         }
 
-        $oldStatus = $order->status;
+        // Observer handles WA notification + history recording automatically
         $order->update([
             'status' => 'Diambil',
-            'payment_status' => 'Lunas' // Auto-lunas if taken
+            'payment_status' => 'Lunas'
         ]);
-
-        if ($oldStatus !== 'Diambil') {
-            app(WhatsappNotificationService::class)->sendTrackingUpdate($order);
-        }
 
         return response()->json([
             'success' => true, 
-            'message' => 'Berhasil! Pesanan ' . $order->customer_name . ' berhasil diselesaikan.',
+            'message' => 'Berhasil! Pesanan ' . $order->customer_name . ' berhasil diselesaikan. Notifikasi WA otomatis terkirim.',
             'order' => $order
+        ]);
+    }
+
+    /**
+     * Confirm a pending online order (Menunggu Konfirmasi → Diterima)
+     */
+    public function confirmOrder(Order $order)
+    {
+        if ($order->status !== 'Menunggu Konfirmasi') {
+            return response()->json(['success' => false, 'message' => 'Order ini sudah dikonfirmasi sebelumnya.']);
+        }
+
+        $order->update(['status' => 'Diterima']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order ' . $order->order_code . ' berhasil dikonfirmasi! Notifikasi WA otomatis dikirim ke pelanggan.',
+        ]);
+    }
+
+    /**
+     * Reject a pending online order
+     */
+    public function rejectOrder(Request $request, Order $order)
+    {
+        if ($order->status !== 'Menunggu Konfirmasi') {
+            return response()->json(['success' => false, 'message' => 'Order ini sudah dikonfirmasi/ditolak.']);
+        }
+
+        $reason = $request->input('reason', 'Tidak ada alasan');
+
+        $order->update([
+            'status' => 'Ditolak',
+            'notes'  => ($order->notes ? $order->notes . ' | ' : '') . 'Ditolak: ' . $reason,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order ' . $order->order_code . ' ditolak. Notifikasi dikirim ke pelanggan.',
+        ]);
+    }
+
+    /**
+     * Get photos for an order (JSON)
+     */
+    public function getPhotos(Order $order)
+    {
+        $photos = $order->photos()->orderBy('type')->latest()->get()->map(fn($p) => [
+            'id' => $p->id,
+            'url' => $p->photo_url,
+            'caption' => $p->caption,
+            'type' => $p->type,
+            'type_label' => $p->type_label,
+            'uploaded_by' => $p->uploaded_by,
+            'created_at' => $p->created_at->format('d M Y, H:i'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'photos' => $photos,
+        ]);
+    }
+
+    /**
+     * Upload photos for an order
+     */
+    public function uploadPhotos(Request $request, Order $order)
+    {
+        $request->validate([
+            'photos' => 'required|array|min:1|max:5',
+            'photos.*' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'photo_type' => 'required|in:masuk,proses,selesai',
+            'caption' => 'nullable|string|max:255',
+        ], [
+            'photos.*.max' => 'Ukuran foto maksimal 5MB per file.',
+            'photos.*.image' => 'File harus berupa gambar.',
+            'photos.max' => 'Maksimal 5 foto per upload.',
+        ]);
+
+        $uploaded = 0;
+
+        foreach ($request->file('photos') as $photo) {
+            $path = $photo->store('order-photos/' . $order->id, 'public');
+
+            OrderPhoto::create([
+                'order_id' => $order->id,
+                'photo_path' => $path,
+                'caption' => $request->caption,
+                'type' => $request->photo_type,
+                'uploaded_by' => auth()->user()->name ?? 'System',
+            ]);
+
+            $uploaded++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $uploaded . ' foto berhasil diupload.',
+            'photos' => $order->photos()->latest()->take($uploaded)->get()->map(fn($p) => [
+                'id' => $p->id,
+                'url' => $p->photo_url,
+                'caption' => $p->caption,
+                'type' => $p->type,
+                'type_label' => $p->type_label,
+                'uploaded_by' => $p->uploaded_by,
+                'created_at' => $p->created_at->format('d M Y, H:i'),
+            ]),
+        ]);
+    }
+
+    /**
+     * Delete a photo
+     */
+    public function deletePhoto(OrderPhoto $photo)
+    {
+        Storage::disk('public')->delete($photo->photo_path);
+        $photo->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Foto berhasil dihapus.',
         ]);
     }
 

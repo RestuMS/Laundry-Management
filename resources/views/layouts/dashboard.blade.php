@@ -6,12 +6,12 @@
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>LaundryPro - @yield('title')</title>
 
     <!-- Preconnect to CDNs for faster DNS resolution -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -28,47 +28,8 @@
     <!-- SweetAlert2 (Defer) -->
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Tailwind CSS (Play CDN blocks main thread, preconnect helps speed) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                    },
-                    colors: {
-                        primary: '#3B82F6', // Blue 500
-                        'primary-light': '#EFF6FF', // Blue 50
-                        secondary: '#64748B', // Slate 500
-                        background: '#F8FAFC', // Slate 50
-                        card: '#FFFFFF',
-                    },
-                    boxShadow: {
-                        'floating': '0 10px 40px -10px rgba(0,0,0,0.08)',
-                        'bottom-nav': '0 -4px 20px rgba(0,0,0,0.05)',
-                        'soft': '0 2px 10px rgba(0,0,0,0.02)',
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.3s ease-out',
-                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { transform: 'translateY(20px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <!-- Vite disabled to fix reloading latency ->  {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}} -->
+    <!-- Vite to enable Hot Module Replacement (HMR) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
         body {
@@ -120,6 +81,31 @@
                 box-shadow: 0 12px 25px -5px rgba(0,0,0,0.08);
             }
         }
+
+        /* Notification dropdown */
+        .notif-dropdown {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .notif-item {
+            transition: background-color 0.15s;
+        }
+        .notif-item:hover {
+            background-color: #F8FAFC;
+        }
+        .notif-item.unread {
+            background-color: #EFF6FF;
+        }
+        .notif-item.unread:hover {
+            background-color: #DBEAFE;
+        }
+
+        /* Color maps for notification icons */
+        .notif-icon-blue { background-color: #EFF6FF; color: #3B82F6; }
+        .notif-icon-green { background-color: #F0FDF4; color: #22C55E; }
+        .notif-icon-red { background-color: #FEF2F2; color: #EF4444; }
+        .notif-icon-orange { background-color: #FFFBEB; color: #F59E0B; }
+        .notif-icon-purple { background-color: #FAF5FF; color: #A855F7; }
     </style>
 </head>
 <body class="text-slate-800 antialiased font-sans selection:bg-primary selection:text-white pb-safe" x-data="{ mobileMenuOpen: false }">
@@ -142,8 +128,9 @@
                 ['name' => 'Pelanggan', 'url' => route('pelanggan.index'), 'icon' => 'ph-users', 'active' => request()->routeIs('pelanggan.*')],
                 ['name' => 'Laporan', 'url' => route('laporan.index'), 'icon' => 'ph-chart-line-up', 'active' => request()->routeIs('laporan.*')],
                 ['name' => 'Keuangan', 'url' => route('expense.index'), 'icon' => 'ph-wallet', 'active' => request()->routeIs('expense.*')],
-                ['name' => 'Inventaris', 'url' => route('inventory.index'), 'icon' => 'ph-box-box', 'active' => request()->routeIs('inventory.*')],
+                ['name' => 'Inventaris', 'url' => route('inventory.index'), 'icon' => 'ph-package', 'active' => request()->routeIs('inventory.*')],
                 ['name' => 'Karyawan', 'url' => route('pengguna.index'), 'icon' => 'ph-identification-badge', 'active' => request()->routeIs('pengguna.*')],
+                ['name' => 'Log Aktivitas', 'url' => route('activity-log.index'), 'icon' => 'ph-clock-counter-clockwise', 'active' => request()->routeIs('activity-log.*')],
                 ['name' => 'Pengaturan', 'url' => route('settings.index'), 'icon' => 'ph-gear', 'active' => request()->routeIs('settings.*')],
             ],
             'kasir' => [
@@ -156,28 +143,25 @@
                 ['name' => 'Home', 'url' => route('owner'), 'icon' => 'ph-house', 'active' => request()->routeIs('owner')],
                 ['name' => 'Laporan', 'url' => route('laporan.index'), 'icon' => 'ph-chart-pie', 'active' => request()->routeIs('laporan.*')],
                 ['name' => 'Pengeluaran', 'url' => route('expense.index'), 'icon' => 'ph-wallet', 'active' => request()->routeIs('expense.*')],
-                ['name' => 'Inventaris', 'url' => route('inventory.index'), 'icon' => 'ph-box-box', 'active' => request()->routeIs('inventory.*')],
-                ['name' => 'Profil', 'url' => route('settings.index'), 'icon' => 'ph-user-circle', 'active' => request()->routeIs('settings.*')],
+                ['name' => 'Inventaris', 'url' => route('inventory.index'), 'icon' => 'ph-package', 'active' => request()->routeIs('inventory.*')],
             ]
         ];
 
         $currentNav = $menus[$role] ?? $menus['admin'];
         
-        // Extract subset for Bottom Nav (Strictly Home, Action, Settings for mobile aesthetics)
+        // Extract subset for Bottom Nav
         $bottomNavItems = [];
-        $middleCreateUrl = route('order.create'); // FAB Center action
+        $middleCreateUrl = route('order.create');
         
-        // Find indices of Home and Settings based on role map
-        $homeIndex = 0; // usually 0
-        $settingsIndex = count($currentNav) - 1; // usually last element
+        $homeIndex = 0;
+        $settingsIndex = count($currentNav) - 1;
         
         if ($role == 'owner') {
-           $bottomNavItems = [$currentNav[0], $currentNav[$settingsIndex]];
+           $bottomNavItems = $currentNav;
         } elseif ($role == 'kasir') {
-           // For Kasir, strict 3 icons only (Home, FAB, Order)
            $bottomNavItems = [$currentNav[0], $currentNav[1]];
         } else {
-           $bottomNavItems = [$currentNav[0], $currentNav[1] /* Order index */, $currentNav[$settingsIndex]];
+           $bottomNavItems = [$currentNav[0], $currentNav[1], $currentNav[$settingsIndex]];
         }
     @endphp
 
@@ -193,21 +177,58 @@
         </div>
         
         <div class="flex items-center gap-2.5">
-            <!-- Notification Bell -->
-            <button class="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 hover:text-primary transition-colors relative shadow-soft">
-                <i class="ph ph-bell text-lg"></i>
-                <span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
-            @if($role == 'admin')
-            <a href="{{ route('settings.index') }}" class="w-9 h-9 rounded-full overflow-hidden border-2 border-white shadow-soft">
+            <!-- Notification Bell (Mobile) -->
+            <div x-data="notificationBell()" class="relative">
+                <button @click="toggle()" class="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 hover:text-primary transition-colors relative shadow-soft">
+                    <i class="ph ph-bell text-lg"></i>
+                    <span x-show="unreadCount > 0" x-text="unreadCount > 9 ? '9+' : unreadCount" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center border-2 border-white"></span>
+                </button>
+
+                <!-- Dropdown -->
+                <div x-show="open" x-cloak @click.away="open = false"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     class="absolute right-0 top-12 w-[340px] max-w-[calc(100vw-40px)] bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50" style="display: none;">
+                    
+                    <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="text-[15px] font-bold text-slate-800">Notifikasi</h3>
+                        <button @click="markAllRead()" x-show="unreadCount > 0" class="text-[12px] font-semibold text-primary hover:text-blue-700 transition-colors">
+                            Tandai semua dibaca
+                        </button>
+                    </div>
+
+                    <div class="notif-dropdown">
+                        <template x-if="notifications.length === 0">
+                            <div class="px-5 py-8 text-center">
+                                <i class="ph ph-bell-slash text-4xl text-slate-300 mb-2"></i>
+                                <p class="text-[13px] text-slate-400 font-medium">Belum ada notifikasi</p>
+                            </div>
+                        </template>
+                        <template x-for="notif in notifications" :key="notif.id">
+                            <a :href="notif.link || '#'" @click="markAsRead(notif)" class="notif-item block px-5 py-3.5 border-b border-slate-50" :class="{ 'unread': !notif.is_read }">
+                                <div class="flex gap-3">
+                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" :class="'notif-icon-' + notif.color">
+                                        <i :class="notif.icon" class="text-lg"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[13px] font-bold text-slate-700 truncate" x-text="notif.title"></p>
+                                        <p class="text-[12px] text-slate-500 mt-0.5 line-clamp-2" x-text="notif.message"></p>
+                                        <p class="text-[11px] text-slate-400 mt-1 font-medium" x-text="notif.time_ago"></p>
+                                    </div>
+                                    <div x-show="!notif.is_read" class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                                </div>
+                            </a>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            <a href="{{ route('settings.index') }}" class="w-9 h-9 rounded-full overflow-hidden border-2 border-white shadow-soft block float-right">
                 <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()?->name ?? 'User') }}&background=3B82F6&color=fff&bold=true" alt="Avatar" class="w-full h-full object-cover">
             </a>
-            @else
-            <!-- Logic Logout PWA untuk Owner dan Kasir (Akses Cepat Header) -->
-            <a href="{{ route('logout') }}" onclick="return confirm('Apakah Anda yakin ingin Log Out?')" class="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-red-600 border border-red-100 shadow-soft hover:bg-red-500 hover:text-white transition-colors">
-                <i class="ph ph-sign-out text-base font-bold"></i>
-            </a>
-            @endif
         </div>
     </header>
 
@@ -223,13 +244,13 @@
             </div>
 
             <div class="px-6 pb-4">
-                <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()?->name ?? 'User') }}&background=3B82F6&color=fff&bold=true" class="w-10 h-10 rounded-full shadow-sm">
-                    <div>
-                        <div class="text-[14px] font-bold text-slate-700">{{ auth()->user()?->name ?? 'Admin' }}</div>
+                <a href="{{ route('settings.index') }}" class="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3 hover:bg-slate-100 transition-colors cursor-pointer block w-full text-left">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()?->name ?? 'User') }}&background=3B82F6&color=fff&bold=true" class="w-10 h-10 rounded-full shadow-sm float-left">
+                    <div class="ml-13">
+                        <div class="text-[14px] font-bold text-slate-700 truncate w-full pt-0.5">{{ auth()->user()?->name ?? 'Admin' }}</div>
                         <div class="text-[12px] font-medium text-slate-400 capitalize">{{ $role }} Account</div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <p class="px-6 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 mt-2">Main Menu</p>
@@ -244,10 +265,13 @@
             </nav>
 
             <div class="p-4 mt-auto mb-2">
-                <a href="{{ route('logout') }}" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-[14px] font-semibold text-red-500 hover:bg-red-50 transition-colors">
-                    <i class="ph ph-sign-out text-[20px]"></i>
-                    Log Out
-                </a>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-[14px] font-semibold text-red-500 hover:bg-red-50 transition-colors w-full text-left">
+                        <i class="ph ph-sign-out text-[20px]"></i>
+                        Log Out
+                    </button>
+                </form>
             </div>
         </aside>
 
@@ -261,13 +285,60 @@
                     <p class="text-[14px] font-medium text-slate-500 mt-1">Pantau transaksi dan operasional dengan mudah.</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button class="w-[42px] h-[42px] rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-primary transition-colors shadow-sm relative">
-                        <i class="ph ph-bell text-[20px]"></i>
-                        <span class="absolute top-[10px] right-[10px] w-[8px] h-[8px] bg-red-500 rounded-full border border-white"></span>
-                    </button>
+                    <!-- Notification Bell (Desktop) -->
+                    <div x-data="notificationBell()" class="relative">
+                        <button @click="toggle()" class="w-[42px] h-[42px] rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-primary transition-colors shadow-sm relative">
+                            <i class="ph ph-bell text-[20px]"></i>
+                            <span x-show="unreadCount > 0" x-text="unreadCount > 9 ? '9+' : unreadCount" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center border-2 border-white"></span>
+                        </button>
+
+                        <!-- Dropdown -->
+                        <div x-show="open" x-cloak @click.away="open = false"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+                             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute right-0 top-14 w-[380px] bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50" style="display: none;">
+                            
+                            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                                <h3 class="text-[15px] font-bold text-slate-800">Notifikasi</h3>
+                                <button @click="markAllRead()" x-show="unreadCount > 0" class="text-[12px] font-semibold text-primary hover:text-blue-700 transition-colors">
+                                    Tandai semua dibaca
+                                </button>
+                            </div>
+
+                            <div class="notif-dropdown">
+                                <template x-if="notifications.length === 0">
+                                    <div class="px-5 py-8 text-center">
+                                        <i class="ph ph-bell-slash text-4xl text-slate-300 mb-2"></i>
+                                        <p class="text-[13px] text-slate-400 font-medium">Belum ada notifikasi</p>
+                                    </div>
+                                </template>
+                                <template x-for="notif in notifications" :key="notif.id">
+                                    <a :href="notif.link || '#'" @click="markAsRead(notif)" class="notif-item block px-5 py-3.5 border-b border-slate-50" :class="{ 'unread': !notif.is_read }">
+                                        <div class="flex gap-3">
+                                            <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" :class="'notif-icon-' + notif.color">
+                                                <i :class="notif.icon" class="text-lg"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-[13px] font-bold text-slate-700 truncate" x-text="notif.title"></p>
+                                                <p class="text-[12px] text-slate-500 mt-0.5 line-clamp-2" x-text="notif.message"></p>
+                                                <p class="text-[11px] text-slate-400 mt-1 font-medium" x-text="notif.time_ago"></p>
+                                            </div>
+                                            <div x-show="!notif.is_read" class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                                        </div>
+                                    </a>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    @if(auth()->user()->role !== 'owner')
                     <a href="{{ route('order.create') }}" class="px-5 py-2.5 bg-primary text-white rounded-full font-bold text-[14px] shadow-[0_4px_12px_rgba(59,130,246,0.3)] hover:scale-105 transition-transform flex items-center gap-2">
                         <i class="ph ph-plus text-lg"></i> Transaksi Baru
                     </a>
+                    @endif
                 </div>
             </div>
 
@@ -303,16 +374,10 @@
                     if ($role == 'admin') {
                         $isMiddleFab = ($index == 1);
                     } elseif ($role == 'kasir') {
-                        $isMiddleFab = ($index == 0); // Inject exactly between Home and Order
+                        $isMiddleFab = ($index == 0);
                     }
-                    $isMiddleOwnerSpace = ($index == 1) && ($role == 'owner');
                 @endphp
 
-                <!-- If role is owner and it's the middle, inject spacing -->
-                @if($isMiddleOwnerSpace)
-                    <div class="w-12 h-12 md:hidden"></div>
-                @endif
-                
                 <a href="{{ $item['url'] }}" class="flex flex-col items-center justify-center gap-1 w-16 group focus:outline-none">
                     <div class="relative px-3 py-1 rounded-full transition-all duration-300 {{ $item['active'] && !request()->routeIs('order.create') ? 'bg-blue-50' : '' }}">
                         <i class="ph {{ $item['icon'] }} text-[24px] transition-colors {{ $item['active'] && !request()->routeIs('order.create') ? 'text-primary ph-fill' : 'text-slate-400 group-hover:text-slate-600' }}"></i>
@@ -322,7 +387,6 @@
                     </span>
                 </a>
 
-                <!-- If role is admin or kasir, inject the FAB Button right after the 1st item (index=0 output, then FAB, then index=1 output) wait! index==1 is actually the order page for kasir! -->
                 @if($isMiddleFab)
                     <!-- Main center FAB -->
                     <a href="{{ $middleCreateUrl }}" class="relative -top-6 flex flex-col items-center justify-center group focus:outline-none z-10 mx-2">
@@ -384,16 +448,89 @@
                     </a>
                     @endforeach
                     
-                    <a href="{{ route('logout') }}" class="flex flex-col items-center gap-2 group active:scale-95 transition-transform">
-                        <div class="w-[65px] h-[65px] rounded-[18px] bg-red-50/50 border border-red-100 flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.03)] text-red-500 hover:bg-red-50 transition-colors">
-                            <i class="ph ph-sign-out text-[28px]"></i>
-                        </div>
-                        <span class="text-[11px] font-semibold text-center leading-tight mt-1 text-red-600">Log Out</span>
-                    </a>
+                    <!-- Logout button as form -->
+                    <form method="POST" action="{{ route('logout') }}" class="flex flex-col items-center gap-2 group active:scale-95 transition-transform">
+                        @csrf
+                        <button type="submit" class="flex flex-col items-center gap-2">
+                            <div class="w-[65px] h-[65px] rounded-[18px] bg-red-50/50 border border-red-100 flex items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.03)] text-red-500 hover:bg-red-50 transition-colors">
+                                <i class="ph ph-sign-out text-[28px]"></i>
+                            </div>
+                            <span class="text-[11px] font-semibold text-center leading-tight mt-1 text-red-600">Log Out</span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Notification Bell Alpine.js Component -->
+    <script>
+        function notificationBell() {
+            return {
+                open: false,
+                notifications: [],
+                unreadCount: 0,
+                
+                init() {
+                    this.fetchNotifications();
+                    // Poll every 30 seconds 
+                    setInterval(() => this.fetchNotifications(), 30000);
+                },
+                
+                toggle() {
+                    this.open = !this.open;
+                    if (this.open) {
+                        this.fetchNotifications();
+                    }
+                },
+                
+                async fetchNotifications() {
+                    try {
+                        const res = await fetch('/api/notifications', {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+                        const data = await res.json();
+                        this.notifications = data.notifications;
+                        this.unreadCount = data.unread_count;
+                    } catch(e) {
+                        console.error('Failed to fetch notifications', e);
+                    }
+                },
+                
+                async markAsRead(notif) {
+                    if (notif.is_read) return;
+                    try {
+                        await fetch(`/api/notifications/${notif.id}/read`, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+                        notif.is_read = true;
+                        this.unreadCount = Math.max(0, this.unreadCount - 1);
+                    } catch(e) {}
+                },
+                
+                async markAllRead() {
+                    try {
+                        await fetch('/api/notifications/read-all', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+                        this.notifications.forEach(n => n.is_read = true);
+                        this.unreadCount = 0;
+                    } catch(e) {}
+                }
+            }
+        }
+    </script>
 
     @stack('scripts')
 </body>

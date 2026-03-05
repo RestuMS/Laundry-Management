@@ -106,6 +106,59 @@
                             class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary placeholder-slate-400 text-[14px] font-medium text-slate-700 transition-all shadow-sm outline-none">
                         <p class="text-[11px] text-slate-500 font-medium mt-1">Gunakan token ini untuk mengaktifkan notifikasi resi tagihan otomatis melalui Bot WhatsApp Server.</p>
                     </div>
+
+                    <!-- Auto WA Notification Toggle -->
+                    <div class="space-y-2 md:col-span-2 mt-2 pt-6 border-t border-slate-100">
+                        <label class="block text-[13px] font-bold text-slate-700 flex items-center gap-2">
+                            Notifikasi WhatsApp Otomatis <span class="bg-green-100 text-green-600 text-[10px] px-2 py-0.5 rounded-full">Baru</span>
+                        </label>
+                        <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="hidden" name="auto_wa_notification" value="0">
+                                <input type="checkbox" name="auto_wa_notification" value="1" class="sr-only peer" {{ old('auto_wa_notification', $settings['auto_wa_notification'] ?? '1') == '1' ? 'checked' : '' }}>
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                            </label>
+                            <div>
+                                <p class="text-[13px] font-bold text-slate-700">Kirim WA otomatis saat status order berubah</p>
+                                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Jika diaktifkan, setiap perubahan status order (Diterima → Dicuci → Dikeringkan → dst) akan otomatis mengirim pesan WhatsApp ke pelanggan dengan progress real-time.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Log Preview -->
+                    <div class="space-y-2 md:col-span-2 mt-2 pt-6 border-t border-slate-100">
+                        <label class="block text-[13px] font-bold text-slate-700 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Log Notifikasi Terakhir
+                        </label>
+                        @php
+                            $recentLogs = \App\Models\NotificationLog::latest()->take(5)->get();
+                        @endphp
+                        @if($recentLogs->count() > 0)
+                        <div class="bg-white rounded-xl border border-slate-100 divide-y divide-slate-50 overflow-hidden">
+                            @foreach($recentLogs as $log)
+                            <div class="px-4 py-3 flex items-center gap-3 text-[12px]">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 {{ $log->delivery_status === 'sent' ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500' }}">
+                                    @if($log->delivery_status === 'sent')
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    @else
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    @endif
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-bold text-slate-700 truncate">{{ $log->phone }} — {{ ucfirst($log->type) }}</p>
+                                    <p class="text-slate-400 font-medium">Status: {{ $log->status_trigger }} • {{ $log->created_at->diffForHumans() }}</p>
+                                </div>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ $log->delivery_status === 'sent' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600' }}">{{ strtoupper($log->delivery_status) }}</span>
+                            </div>
+                            @endforeach
+                        </div>
+                        @else
+                        <div class="bg-slate-50 rounded-xl p-6 text-center">
+                            <p class="text-[13px] text-slate-400 font-medium">Belum ada notifikasi yang terkirim.</p>
+                        </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 

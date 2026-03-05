@@ -42,8 +42,29 @@ td {
 }
 </style>
 
+@php
+    $pendingCount = $orders->where('status', 'Menunggu Konfirmasi')->count();
+    $totalPending = \App\Models\Order::where('status', 'Menunggu Konfirmasi')->count();
+@endphp
+
 <div x-data="orderManager()">
     
+    <!-- Pending Orders Alert -->
+    @if($totalPending > 0)
+    <div class="mb-5 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-[20px] p-4 flex items-center gap-4 shadow-sm animate-pulse-slow">
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div class="flex-1">
+            <h4 class="font-bold text-amber-800 text-[15px]">{{ $totalPending }} Order Online Menunggu Konfirmasi</h4>
+            <p class="text-[13px] text-amber-600 font-medium">Segera review dan konfirmasi/tolak pesanan online yang masuk.</p>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center font-black text-[16px] shadow-lg shadow-amber-200 shrink-0">
+            {{ $totalPending }}
+        </div>
+    </div>
+    @endif
+
     <!-- Top Bar: Search & Add -->
     <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         
@@ -110,9 +131,22 @@ td {
                                 <img src="https://ui-avatars.com/api/?name={{ urlencode($order->customer_name) }}&background={{ $bgColor }}&color=fff&rounded=true&bold=true" class="w-12 h-12 rounded-[14px] shadow-sm border-2 border-white transform transition-transform group-hover:scale-105"/>
                                 <div>
                                     <span class="font-bold text-slate-800 block text-[15.5px] mb-0.5">{{ $order->customer_name }}</span>
-                                    <span class="text-[12.5px] font-bold text-[#4F8EF7] bg-[#F0F5FF] px-2 py-0.5 rounded-md inline-block">
-                                        {{ $order->order_code }}
-                                    </span>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-[12.5px] font-bold text-[#4F8EF7] bg-[#F0F5FF] px-2 py-0.5 rounded-md inline-block">
+                                            {{ $order->order_code }}
+                                        </span>
+                                        @if($order->order_source === 'online')
+                                        <span class="text-[10.5px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                                            Online
+                                        </span>
+                                        @else
+                                        <span class="text-[10.5px] font-bold text-slate-400 bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                            Manual
+                                        </span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </td>
@@ -147,7 +181,11 @@ td {
                             <!-- Dynamic Workflow Badge Status -->
                             @php
                                 $badgeStyle = '';
-                                if($order->status == 'Diterima' || $order->status == 'Quality Control') {
+                                if($order->status == 'Menunggu Konfirmasi') {
+                                    $badgeStyle = 'bg-amber-50 text-amber-600 border border-amber-300 animate-pulse';
+                                } elseif($order->status == 'Ditolak') {
+                                    $badgeStyle = 'bg-red-50 text-red-500 border border-red-300';
+                                } elseif($order->status == 'Diterima' || $order->status == 'Quality Control') {
                                     $badgeStyle = 'bg-slate-100 text-slate-600 border border-slate-200';
                                 } elseif($order->status == 'Dicuci' || $order->status == 'Dikeringkan' || $order->status == 'Disetrika' || $order->status == 'Diproses') {
                                     $badgeStyle = 'bg-[#FFF4E5] text-[#F59E0B] border border-[#F59E0B]/20';
@@ -177,6 +215,18 @@ td {
 
                         <td class="py-5 px-6 text-right {{ $loop->last ? 'rounded-br-[20px]' : '' }}">
                             <div class="flex items-center justify-end gap-2">
+                                @if($order->status === 'Menunggu Konfirmasi')
+                                <!-- Approve Button -->
+                                <button type="button" @click="confirmOnlineOrder({{ $order->id }})" class="h-10 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[12.5px] shadow-sm flex items-center gap-1.5 transition-all hover:-translate-y-0.5" title="Konfirmasi Order">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                    Approve
+                                </button>
+                                <!-- Reject Button -->
+                                <button type="button" @click="rejectOnlineOrder({{ $order->id }}, '{{ $order->order_code }}')" class="h-10 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-[12.5px] shadow-sm flex items-center gap-1.5 transition-all hover:-translate-y-0.5" title="Tolak Order">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    Tolak
+                                </button>
+                                @else
                                 <!-- Print Button -->
                                 <a href="{{ route('order.invoice', $order->id) }}" target="_blank" class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-indigo-500 hover:border-indigo-500 transition-all flex items-center justify-center shadow-sm" title="Cetak Struk">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
@@ -212,11 +262,20 @@ td {
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                 </a>
 
+                                <!-- Photo Documentation -->
+                                <button type="button" @click="openPhotoModal({{ $order->id }}, '{{ $order->order_code }}', {{ $order->photos->count() }})" class="w-10 h-10 rounded-xl border transition-all flex items-center justify-center shadow-sm relative {{ $order->photos->count() > 0 ? 'bg-purple-50 border-purple-200 text-purple-500 hover:bg-purple-500 hover:text-white' : 'bg-white border-slate-200 text-slate-400 hover:text-purple-500 hover:border-purple-300' }}" title="Dokumentasi Foto ({{ $order->photos->count() }})">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    @if($order->photos->count() > 0)
+                                    <span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-purple-500 text-white text-[10px] font-black flex items-center justify-center shadow-sm">{{ $order->photos->count() }}</span>
+                                    @endif
+                                </button>
+
                                 <!-- Delete -->
                                 @if(auth()->user()?->role === 'admin')
                                 <button type="button" @click="confirmDelete('{{ $order->id }}', '{{ $order->order_code }}', '{{ addslashes($order->customer_name) }}')" class="w-10 h-10 rounded-xl bg-red-50 border border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center shadow-sm">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
+                                @endif
                                 @endif
                             </div>
                         </td>
@@ -250,7 +309,11 @@ td {
             $bgColor = $colors[$order->id % count($colors)];
             
             $badgeStyle = '';
-            if($order->status == 'Diterima' || $order->status == 'Quality Control') {
+            if($order->status == 'Menunggu Konfirmasi') {
+                $badgeStyle = 'bg-amber-50 text-amber-600 border border-amber-300 animate-pulse';
+            } elseif($order->status == 'Ditolak') {
+                $badgeStyle = 'bg-red-50 text-red-500 border border-red-300';
+            } elseif($order->status == 'Diterima' || $order->status == 'Quality Control') {
                 $badgeStyle = 'bg-slate-100 text-slate-600 border border-slate-200';
             } elseif($order->status == 'Dicuci' || $order->status == 'Dikeringkan' || $order->status == 'Disetrika' || $order->status == 'Diproses') {
                 $badgeStyle = 'bg-[#FFF4E5] text-[#F59E0B] border border-[#F59E0B]/20';
@@ -260,15 +323,35 @@ td {
                 $badgeStyle = 'bg-[#FEE2E2] text-[#EF4444] border border-[#EF4444]/20';
             }
         @endphp
-        <div class="glass-container rounded-[20px] p-4 shadow-sm border border-white/60 relative overflow-hidden group">
+        <div class="glass-container rounded-[20px] p-4 shadow-sm border {{ $order->status === 'Menunggu Konfirmasi' ? 'border-amber-300 ring-2 ring-amber-100' : 'border-white/60' }} relative overflow-hidden group">
+            <!-- Approve/Reject Buttons for Mobile -->
+            @if($order->status === 'Menunggu Konfirmasi')
+            <div class="flex gap-2 mb-3">
+                <button @click="confirmOnlineOrder({{ $order->id }})" class="flex-1 py-2.5 rounded-xl bg-emerald-500 text-white text-[12px] font-bold flex items-center justify-center gap-1 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                    Konfirmasi
+                </button>
+                <button @click="rejectOnlineOrder({{ $order->id }}, '{{ $order->order_code }}')" class="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-[12px] font-bold flex items-center justify-center gap-1 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    Tolak
+                </button>
+            </div>
+            @endif
             <!-- Card Header -->
             <div class="flex justify-between items-start border-b border-slate-100/60 pb-3 mb-3 relative z-10">
                 <div class="flex items-center gap-3">
                     <img src="https://ui-avatars.com/api/?name={{ urlencode($order->customer_name) }}&background={{ $bgColor }}&color=fff&rounded=true&bold=true" class="w-10 h-10 rounded-full shadow-sm border-2 border-white"/>
                     <div>
                         <div class="font-bold text-[14.5px] text-slate-800 leading-tight mb-0.5">{{ $order->customer_name }}</div>
-                        <div class="text-[11px] font-bold text-[#4F8EF7] bg-[#F0F5FF] px-2 py-0.5 rounded inline-flex items-center gap-1">
-                            <i class="ph ph-hash"></i> {{ $order->order_code }}
+                        <div class="flex items-center gap-1 flex-wrap">
+                            <div class="text-[11px] font-bold text-[#4F8EF7] bg-[#F0F5FF] px-2 py-0.5 rounded inline-flex items-center gap-1">
+                                <i class="ph ph-hash"></i> {{ $order->order_code }}
+                            </div>
+                            @if($order->order_source === 'online')
+                            <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5">
+                                <i class="ph ph-globe text-[10px]"></i> Online
+                            </span>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -490,7 +573,7 @@ td {
         </div>
     </div>
 
-    <!-- MODERN PAYMENT STATUS MODAL -->
+    <!-- MODERN PAYMENT MANAGEMENT MODAL -->
     <div x-show="paymentModalOpen" x-cloak class="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden" style="display: none;">
         <div x-show="paymentModalOpen" x-transition.opacity class="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"></div>
         
@@ -502,50 +585,237 @@ td {
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
             x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-            class="relative w-full max-w-[400px] bg-white rounded-[24px] shadow-2xl p-6 z-10 mx-4 border border-slate-100/80 flex flex-col max-h-[90vh]">
+            class="relative w-full max-w-[460px] bg-white rounded-[24px] shadow-2xl p-6 z-10 mx-4 border border-slate-100/80 flex flex-col max-h-[90vh]">
             
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex justify-between items-center mb-5">
                 <div>
-                    <h3 class="text-xl font-bold text-slate-800 tracking-tight">Status Pembayaran</h3>
-                    <p class="text-[13px] text-slate-500 font-medium">Ubah tahapan pembayaran pesanan ini.</p>
+                    <h3 class="text-xl font-bold text-slate-800 tracking-tight">Pembayaran</h3>
+                    <p class="text-[13px] text-slate-500 font-medium">Catat pembayaran DP / cicilan / lunas</p>
                 </div>
                 <button type="button" @click="paymentModalOpen = false" class="text-slate-400 hover:text-slate-600 bg-slate-100 p-2 rounded-full transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
 
+            <!-- Payment Summary Card -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 mb-5 border border-blue-100">
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Total</p>
+                        <p class="text-[14px] font-black text-slate-700" x-text="'Rp ' + formatRupiah(paymentData.grand_total)"></p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-green-500 uppercase mb-1">Dibayar</p>
+                        <p class="text-[14px] font-black text-green-600" x-text="'Rp ' + formatRupiah(paymentData.total_paid)"></p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-red-400 uppercase mb-1">Sisa</p>
+                        <p class="text-[14px] font-black" :class="paymentData.remaining > 0 ? 'text-red-500' : 'text-green-600'" x-text="'Rp ' + formatRupiah(paymentData.remaining)"></p>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex-1 overflow-y-auto custom-scrollbar -mr-2 pr-2">
-                <div class="space-y-3 pb-2 relative">
+                <!-- Payment History -->
+                <div x-show="paymentData.payments && paymentData.payments.length > 0" class="mb-5">
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Riwayat Pembayaran</p>
+                    <div class="space-y-2">
+                        <template x-for="pay in paymentData.payments" :key="pay.id">
+                            <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                                <div>
+                                    <p class="text-[13px] font-bold text-slate-700" x-text="'Rp ' + formatRupiah(pay.amount)"></p>
+                                    <p class="text-[11px] text-slate-400" x-text="pay.payment_method + ' • ' + pay.created_at + ' • ' + pay.received_by"></p>
+                                    <p x-show="pay.note" class="text-[11px] text-slate-400 italic" x-text="pay.note"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Add Payment Form -->
+                <div x-show="paymentData.remaining > 0" class="border-t border-slate-100 pt-5">
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Tambah Pembayaran</p>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[12px] font-bold text-slate-600 mb-1 block">Jumlah (Rp)</label>
+                            <input type="number" x-model="newPayment.amount" :max="paymentData.remaining" min="1" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-[14px] font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" :placeholder="'Max: ' + formatRupiah(paymentData.remaining)">
+                        </div>
+                        <div>
+                            <label class="text-[12px] font-bold text-slate-600 mb-1 block">Metode Bayar</label>
+                            <select x-model="newPayment.payment_method" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-[13px] font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
+                                <option value="Cash">Cash</option>
+                                <option value="Transfer">Transfer Bank</option>
+                                <option value="QRIS">QRIS</option>
+                                <option value="E-Wallet">E-Wallet</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[12px] font-bold text-slate-600 mb-1 block">Catatan (opsional)</label>
+                            <input type="text" x-model="newPayment.note" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-[13px] font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Contoh: DP pertama, cicilan ke-2, dll.">
+                        </div>
+                        <button @click="submitPayment()" :disabled="isSubmittingPayment" class="w-full py-3.5 bg-primary text-white rounded-xl font-bold text-[14px] shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                            <svg x-show="isSubmittingPayment" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <i class="ph ph-plus-circle text-lg" x-show="!isSubmittingPayment"></i>
+                            <span x-text="isSubmittingPayment ? 'Menyimpan...' : 'Catat Pembayaran'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Fully Paid Notice -->
+                <div x-show="paymentData.remaining <= 0 && paymentData.total_paid > 0" class="bg-green-50 border border-green-200 rounded-2xl p-4 text-center mt-4">
+                    <i class="ph-fill ph-check-circle text-3xl text-green-500 mb-2"></i>
+                    <p class="text-[14px] font-bold text-green-700">Pembayaran Lunas!</p>
+                    <p class="text-[12px] text-green-600">Seluruh tagihan sudah terbayar.</p>
+                </div>
+            </div>
+
+            <!-- Quick Status Change (legacy) -->
+            <div class="mt-4 pt-4 border-t border-slate-100">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Ubah Status Manual</p>
+                <div class="flex gap-2">
                     <template x-for="(payStatus, index) in paymentStatuses" :key="index">
-                        <div @click="setPaymentStatus(payStatus.name)" 
-                             class="group cursor-pointer border rounded-[16px] p-3 flex items-center transition-all duration-200"
-                             :class="currentPaymentStatus === payStatus.name ? 'border-[#3B82F6] bg-[#EFF6FF] shadow-sm' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'">
-                            
-                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center mr-4 shrink-0 transition-colors"
-                                 :class="currentPaymentStatus === payStatus.name ? 'border-[#3B82F6] bg-white' : 'border-slate-300 group-hover:border-[#3B82F6]'">
-                                 <div class="w-2.5 h-2.5 rounded-full bg-[#3B82F6] transition-opacity duration-200"
-                                      :class="currentPaymentStatus === payStatus.name ? 'opacity-100' : 'opacity-0'"></div>
-                            </div>
-                            
-                            <div class="flex items-center justify-center w-10 h-10 rounded-[12px] shrink-0 mr-4 transition-colors shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
-                                 :class="currentPaymentStatus === payStatus.name ? payStatus.bgActive + ' ' + payStatus.textActive : 'bg-white border border-slate-100 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600'">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" :d="payStatus.icon"></path></svg>
-                            </div>
+                        <button @click="setPaymentStatus(payStatus.name)"
+                                class="flex-1 py-2.5 rounded-xl text-[12px] font-bold border-2 transition-all"
+                                :class="currentPaymentStatus === payStatus.name 
+                                    ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                                    : 'border-slate-100 text-slate-500 hover:border-slate-300'">
+                            <span x-text="payStatus.name"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                            <div class="font-bold flex-1 text-[15px]"
-                                 :class="currentPaymentStatus === payStatus.name ? 'text-slate-800 tracking-tight' : 'text-slate-600'">
-                                <span x-text="payStatus.name"></span>
-                            </div>
+    <!-- Photo Documentation Modal -->
+    <div x-show="photoModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" @keydown.escape.window="photoModalOpen = false">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="photoModalOpen = false"></div>
+        <div class="relative bg-white rounded-[24px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" @click.stop>
+            <!-- Header -->
+            <div class="p-6 pb-4 border-b border-slate-100">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-[18px] font-black text-slate-800 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            Dokumentasi Foto
+                        </h3>
+                        <p class="text-[13px] text-slate-400 font-medium mt-0.5">Order: <span class="text-slate-600 font-bold" x-text="photoOrderCode"></span></p>
+                    </div>
+                    <button @click="photoModalOpen = false" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
+                        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
 
-                            <div x-show="isUpdatingPayment && currentPaymentStatus === payStatus.name" class="shrink-0 pl-2">
-                                <svg class="animate-spin w-4 h-4 text-[#3B82F6]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <div class="overflow-y-auto flex-1 p-6">
+                <!-- Upload Section -->
+                <div class="mb-6">
+                    <p class="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-3">Upload Foto Baru</p>
+                    
+                    <!-- Photo Type -->
+                    <div class="flex gap-2 mb-3">
+                        <template x-for="t in ['masuk', 'proses', 'selesai']" :key="t">
+                            <button @click="photoType = t" 
+                                    class="flex-1 py-2.5 rounded-xl text-[12px] font-bold border-2 transition-all"
+                                    :class="photoType === t 
+                                        ? (t === 'masuk' ? 'border-blue-500 bg-blue-50 text-blue-700' : (t === 'proses' ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-emerald-500 bg-emerald-50 text-emerald-700'))
+                                        : 'border-slate-100 text-slate-500 hover:border-slate-300'">
+                                <span x-text="t === 'masuk' ? '📥 Saat Masuk' : (t === 'proses' ? '🔄 Saat Proses' : '✅ Saat Selesai')"></span>
+                            </button>
+                        </template>
+                    </div>
+
+                    <!-- Caption -->
+                    <input type="text" x-model="photoCaption" placeholder="Keterangan foto (opsional)..." class="w-full px-4 py-3 rounded-xl border border-slate-200 text-[13px] font-medium focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 mb-3">
+
+                    <!-- Drop Zone -->
+                    <div class="border-2 border-dashed rounded-2xl p-6 text-center transition-colors cursor-pointer"
+                         :class="isDragging ? 'border-purple-400 bg-purple-50' : 'border-slate-200 hover:border-purple-300 bg-slate-50/50'"
+                         @dragover.prevent="isDragging = true"
+                         @dragleave.prevent="isDragging = false"
+                         @drop.prevent="handlePhotoDrop($event)"
+                         @click="$refs.photoInput.click()">
+                        <input type="file" x-ref="photoInput" accept="image/*" multiple class="hidden" @change="handlePhotoSelect($event)">
+                        <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <p class="text-[13px] font-bold text-slate-500">Klik atau drag foto ke sini</p>
+                        <p class="text-[11px] text-slate-400 font-medium mt-1">JPG, PNG, WebP • Max 5MB/foto • Max 5 foto</p>
+                    </div>
+
+                    <!-- Preview Selected -->
+                    <template x-if="selectedPhotos.length > 0">
+                        <div class="mt-3">
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <template x-for="(file, i) in selectedPhotos" :key="i">
+                                    <div class="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-purple-200">
+                                        <img :src="photoPreviewUrls[i]" class="w-full h-full object-cover">
+                                        <button @click="removeSelectedPhoto(i)" class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-bold">✕</button>
+                                    </div>
+                                </template>
                             </div>
+                            <button @click="uploadPhotos()" :disabled="isUploadingPhotos" 
+                                    class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold text-[13px] hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                                <template x-if="isUploadingPhotos">
+                                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                </template>
+                                <span x-text="isUploadingPhotos ? 'Mengupload...' : ('Upload ' + selectedPhotos.length + ' Foto')"></span>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Existing Photos Gallery -->
+                <div>
+                    <p class="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-3">Galeri Foto (<span x-text="orderPhotos.length"></span>)</p>
+                    
+                    <template x-if="isLoadingPhotos">
+                        <div class="text-center py-8">
+                            <svg class="w-8 h-8 mx-auto animate-spin text-purple-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <p class="text-[13px] text-slate-400 font-medium mt-2">Memuat foto...</p>
+                        </div>
+                    </template>
+
+                    <template x-if="!isLoadingPhotos && orderPhotos.length === 0">
+                        <div class="text-center py-8 bg-slate-50 rounded-2xl">
+                            <svg class="w-12 h-12 mx-auto text-slate-200 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <p class="text-[13px] text-slate-400 font-medium">Belum ada foto dokumentasi</p>
+                        </div>
+                    </template>
+
+                    <template x-if="!isLoadingPhotos && orderPhotos.length > 0">
+                        <div>
+                            <template x-for="type in ['masuk', 'proses', 'selesai']" :key="type">
+                                <div x-show="orderPhotos.filter(p => p.type === type).length > 0" class="mb-4">
+                                    <p class="text-[12px] font-bold mb-2 flex items-center gap-1.5"
+                                       :class="type === 'masuk' ? 'text-blue-500' : (type === 'proses' ? 'text-amber-500' : 'text-emerald-500')">
+                                        <span x-text="type === 'masuk' ? '📥 Saat Masuk' : (type === 'proses' ? '🔄 Saat Proses' : '✅ Saat Selesai')"></span>
+                                    </p>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <template x-for="photo in orderPhotos.filter(p => p.type === type)" :key="photo.id">
+                                            <div class="relative group rounded-xl overflow-hidden border border-slate-100 shadow-sm aspect-square">
+                                                <img :src="photo.url" :alt="photo.caption || 'Foto'" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" @click="lightboxUrl = photo.url; lightboxOpen = true">
+                                                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <p class="text-[10px] text-white font-medium truncate" x-text="photo.caption || photo.created_at"></p>
+                                                </div>
+                                                <button @click="deletePhoto(photo.id)" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[11px] font-bold shadow-lg hover:bg-red-600">✕</button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </template>
                 </div>
             </div>
-            
         </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div x-show="lightboxOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="lightboxOpen = false" @keydown.escape.window="lightboxOpen = false">
+        <img :src="lightboxUrl" class="max-w-full max-h-[90vh] rounded-2xl shadow-2xl" @click.stop>
+        <button @click="lightboxOpen = false" class="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
     </div>
 
 </div>
@@ -569,6 +839,35 @@ function orderManager() {
         updatePaymentId: '',
         currentPaymentStatus: '',
         isUpdatingPayment: false,
+        isSubmittingPayment: false,
+        
+        // Payment data from API
+        paymentData: {
+            grand_total: 0,
+            total_paid: 0,
+            remaining: 0,
+            payments: [],
+        },
+        newPayment: {
+            amount: '',
+            payment_method: 'Cash',
+            note: '',
+        },
+
+        // Photo documentation
+        photoModalOpen: false,
+        photoOrderId: null,
+        photoOrderCode: '',
+        photoType: 'masuk',
+        photoCaption: '',
+        selectedPhotos: [],
+        photoPreviewUrls: [],
+        isUploadingPhotos: false,
+        isLoadingPhotos: false,
+        isDragging: false,
+        orderPhotos: [],
+        lightboxOpen: false,
+        lightboxUrl: '',
         
         statuses: [
             { name: 'Diterima', icon: 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4', bgActive: 'bg-slate-100', textActive: 'text-slate-700' },
@@ -586,6 +885,10 @@ function orderManager() {
             { name: 'Lunas', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', bgActive: 'bg-emerald-100', textActive: 'text-emerald-500' },
         ],
 
+        formatRupiah(num) {
+            return new Intl.NumberFormat('id-ID').format(num || 0);
+        },
+
         submitSearch() {
             this.$refs.searchForm.submit();
         },
@@ -594,10 +897,57 @@ function orderManager() {
             this.deleteId = id;
             this.deleteCode = code;
             this.deleteName = name;
-            // Built dynamic URL route inside logic
             const baseUrl = "{{ url('order') }}";
             this.deleteUrl = `${baseUrl}/${id}`;
             this.deleteModalOpen = true;
+        },
+
+        async confirmOnlineOrder(orderId) {
+            if (!confirm('Konfirmasi order ini? Pesanan akan masuk ke antrian proses.')) return;
+            
+            try {
+                const res = await fetch(`/order/${orderId}/confirm`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setTimeout(() => window.location.reload(), 300);
+                } else {
+                    alert(data.message);
+                }
+            } catch(e) {
+                alert('Terjadi kesalahan jaringan.');
+            }
+        },
+
+        async rejectOnlineOrder(orderId, orderCode) {
+            const reason = prompt(`Alasan menolak order ${orderCode}? (opsional)`);
+            if (reason === null) return; // user cancelled
+            
+            try {
+                const res = await fetch(`/order/${orderId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ reason: reason || 'Tidak ada alasan' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setTimeout(() => window.location.reload(), 300);
+                } else {
+                    alert(data.message);
+                }
+            } catch(e) {
+                alert('Terjadi kesalahan jaringan.');
+            }
         },
 
         openStatusModal(id, current) {
@@ -617,7 +967,7 @@ function orderManager() {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ status: newStatus })
@@ -626,7 +976,6 @@ function orderManager() {
                 const data = await response.json();
                 
                 if(data.success) {
-                    // Slight delay for UI visual feedback before reload
                     setTimeout(() => {
                         window.location.reload();
                     }, 400);
@@ -640,10 +989,9 @@ function orderManager() {
             }
         },
 
-        openPaymentModal(id, current) {
+        async openPaymentModal(id, current) {
             this.updatePaymentId = id;
             
-            // Map "Belum Lunas" or "Lunas Cetak" just in case someone has old string
             if(current === 'Belum Lunas') {
                 this.currentPaymentStatus = 'Belum Bayar';
             } else if (current === 'Lunas Cetak') {
@@ -653,6 +1001,62 @@ function orderManager() {
             }
             
             this.paymentModalOpen = true;
+            this.newPayment = { amount: '', payment_method: 'Cash', note: '' };
+            
+            // Fetch payment data from API
+            try {
+                const res = await fetch(`/order/${id}/payments`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                const data = await res.json();
+                this.paymentData = data;
+            } catch(e) {
+                console.error('Failed to fetch payment data', e);
+            }
+        },
+
+        async submitPayment() {
+            if (!this.newPayment.amount || this.newPayment.amount <= 0) {
+                alert('Masukkan jumlah pembayaran yang valid.');
+                return;
+            }
+            
+            this.isSubmittingPayment = true;
+            
+            try {
+                const res = await fetch(`/order/${this.updatePaymentId}/payments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(this.newPayment)
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    // Update local state
+                    this.paymentData.payments.unshift(data.payment);
+                    this.paymentData.total_paid = data.total_paid;
+                    this.paymentData.remaining = data.remaining;
+                    this.currentPaymentStatus = data.payment_status;
+                    this.newPayment = { amount: '', payment_method: 'Cash', note: '' };
+                    
+                    // Reload after short delay to reflect changes
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    alert(data.message || 'Gagal menyimpan pembayaran.');
+                }
+            } catch(e) {
+                alert('Terjadi kesalahan jaringan.');
+            } finally {
+                this.isSubmittingPayment = false;
+            }
         },
 
         async setPaymentStatus(newStatus) {
@@ -666,7 +1070,7 @@ function orderManager() {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ payment_status: newStatus })
@@ -685,6 +1089,115 @@ function orderManager() {
             } catch(e) {
                 alert('Terjadi kesalahan jaringan.');
                 this.isUpdatingPayment = false;
+            }
+        },
+
+        // Photo Documentation Methods
+        async openPhotoModal(orderId, orderCode, photoCount) {
+            this.photoOrderId = orderId;
+            this.photoOrderCode = orderCode;
+            this.photoModalOpen = true;
+            this.selectedPhotos = [];
+            this.photoPreviewUrls = [];
+            this.photoType = 'masuk';
+            this.photoCaption = '';
+            this.orderPhotos = [];
+            this.isLoadingPhotos = true;
+
+            try {
+                const res = await fetch(`/order/${orderId}/photos`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.orderPhotos = data.photos;
+                }
+            } catch(e) {
+                console.error('Failed to load photos', e);
+            } finally {
+                this.isLoadingPhotos = false;
+            }
+        },
+
+        handlePhotoSelect(event) {
+            const files = Array.from(event.target.files);
+            this.addPhotos(files);
+            event.target.value = '';
+        },
+
+        handlePhotoDrop(event) {
+            this.isDragging = false;
+            const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            this.addPhotos(files);
+        },
+
+        addPhotos(files) {
+            const remaining = 5 - this.selectedPhotos.length;
+            const toAdd = files.slice(0, remaining);
+            toAdd.forEach(file => {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert(`File ${file.name} terlalu besar. Max 5MB.`);
+                    return;
+                }
+                this.selectedPhotos.push(file);
+                this.photoPreviewUrls.push(URL.createObjectURL(file));
+            });
+        },
+
+        removeSelectedPhoto(index) {
+            URL.revokeObjectURL(this.photoPreviewUrls[index]);
+            this.selectedPhotos.splice(index, 1);
+            this.photoPreviewUrls.splice(index, 1);
+        },
+
+        async uploadPhotos() {
+            if (this.selectedPhotos.length === 0 || this.isUploadingPhotos) return;
+            this.isUploadingPhotos = true;
+
+            const formData = new FormData();
+            this.selectedPhotos.forEach(f => formData.append('photos[]', f));
+            formData.append('photo_type', this.photoType);
+            formData.append('caption', this.photoCaption);
+
+            try {
+                const res = await fetch(`/order/${this.photoOrderId}/photos`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    data.photos.forEach(p => this.orderPhotos.unshift(p));
+                    this.selectedPhotos = [];
+                    this.photoPreviewUrls = [];
+                    this.photoCaption = '';
+                }
+            } catch(e) {
+                alert('Gagal upload foto.');
+            } finally {
+                this.isUploadingPhotos = false;
+            }
+        },
+
+        async deletePhoto(photoId) {
+            if (!confirm('Hapus foto ini?')) return;
+            try {
+                const res = await fetch(`/order-photos/${photoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.orderPhotos = this.orderPhotos.filter(p => p.id !== photoId);
+                }
+            } catch(e) {
+                alert('Gagal menghapus foto.');
             }
         }
     }

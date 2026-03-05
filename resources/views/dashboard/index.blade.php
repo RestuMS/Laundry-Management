@@ -28,7 +28,7 @@
     <div class="glass-card p-6 rounded-[16px] hover-float relative overflow-hidden group">
         <div class="absolute -right-6 -top-6 w-24 h-24 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/10 transition-colors"></div>
         <div class="flex items-start justify-center mb-4">
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-white to-blue-50/50 flex items-center justify-center shadow-sm border border-white/60 p-2">
+            <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-white to-blue-50/50 flex items-center justify-center shadow-sm border border-white/60 p-3">
                 <img src="{{ asset('images/icon_1.png') }}" onerror="this.src='{{ asset('images/icon.png') }}'" alt="Icon" class="w-full h-full object-contain drop-shadow-sm">
             </div>
         </div>
@@ -46,7 +46,7 @@
     <div class="glass-card p-6 rounded-[16px] hover-float relative overflow-hidden group">
         <div class="absolute -right-6 -top-6 w-24 h-24 bg-orange-400/5 rounded-full blur-xl group-hover:bg-orange-400/10 transition-colors"></div>
         <div class="flex items-start justify-center mb-4">
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-white to-orange-50/50 flex items-center justify-center shadow-sm border border-white/60 p-2">
+            <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-white to-orange-50/50 flex items-center justify-center shadow-sm border border-white/60 p-3">
                 <img src="{{ asset('images/icon_2.png') }}" onerror="this.src='{{ asset('images/icon.png') }}'" alt="Icon" class="w-full h-full object-contain drop-shadow-sm">
             </div>
         </div>
@@ -64,7 +64,7 @@
     <div class="glass-card p-6 rounded-[16px] hover-float relative overflow-hidden group">
         <div class="absolute -right-6 -top-6 w-24 h-24 bg-green-400/5 rounded-full blur-xl group-hover:bg-green-400/10 transition-colors"></div>
         <div class="flex items-start justify-center mb-4">
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-white to-green-50/50 flex items-center justify-center shadow-sm border border-white/60 p-2">
+            <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-white to-green-50/50 flex items-center justify-center shadow-sm border border-white/60 p-3">
                 <img src="{{ asset('images/icon_3.png') }}" onerror="this.src='{{ asset('images/icon.png') }}'" alt="Icon" class="w-full h-full object-contain drop-shadow-sm">
             </div>
         </div>
@@ -82,7 +82,7 @@
     <div class="glass-card p-6 rounded-[16px] hover-float relative overflow-hidden group">
         <div class="absolute -right-6 -top-6 w-24 h-24 bg-green-500/5 rounded-full blur-xl group-hover:bg-green-500/10 transition-colors"></div>
         <div class="flex items-start justify-center mb-4">
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-white to-green-50/50 flex items-center justify-center shadow-sm border border-white/60 p-2">
+            <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-white to-green-50/50 flex items-center justify-center shadow-sm border border-white/60 p-3">
                 <img src="{{ asset('images/icon_4.png') }}" onerror="this.src='{{ asset('images/icon.png') }}'" alt="Icon" class="w-full h-full object-contain drop-shadow-sm">
             </div>
         </div>

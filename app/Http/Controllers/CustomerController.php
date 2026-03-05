@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\Customer;
+use App\Http\Requests\StoreCustomerRequest;
+use App\Http\Requests\UpdateCustomerRequest;
 
 class CustomerController extends Controller
 {
@@ -20,32 +22,16 @@ class CustomerController extends Controller
         return view('dashboard.pelanggan', compact('customers', 'search'));
     }
 
-    public function store(Request $request)
+    public function store(StoreCustomerRequest $request)
     {
-        $request->validate([
-            'full_name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'status' => 'required|string',
-            'notes' => 'nullable|string'
-        ]);
-
-        Customer::create($request->all());
+        Customer::create($request->validated());
 
         return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil ditambahkan!');
     }
 
-    public function update(Request $request, Customer $pelanggan)
+    public function update(UpdateCustomerRequest $request, Customer $pelanggan)
     {
-        $request->validate([
-            'full_name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'status' => 'required|string',
-            'notes' => 'nullable|string'
-        ]);
-
-        $pelanggan->update($request->all());
+        $pelanggan->update($request->validated());
 
         return redirect()->route('pelanggan.index')->with('success', 'Data Pelanggan berhasil diperbarui!');
     }

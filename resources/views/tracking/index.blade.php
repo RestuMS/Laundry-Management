@@ -28,6 +28,8 @@
                         'float': 'float 6s ease-in-out infinite',
                         'float-delayed': 'float 6s ease-in-out 3s infinite',
                         'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'countdown-pulse': 'countdown-pulse 1s ease-in-out infinite',
+                        'slide-in': 'slideIn 0.5s ease-out forwards',
                     },
                     keyframes: {
                         float: {
@@ -37,6 +39,14 @@
                         'pulse-glow': {
                             '0%, 100%': { opacity: 1, boxShadow: '0 0 0 0 rgba(37, 99, 235, 0.4)' },
                             '50%': { opacity: .8, boxShadow: '0 0 0 10px rgba(37, 99, 235, 0)' },
+                        },
+                        'countdown-pulse': {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.02)' },
+                        },
+                        'slideIn': {
+                            '0%': { opacity: 0, transform: 'translateY(20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
                         }
                     }
                 }
@@ -68,6 +78,18 @@
         @keyframes placeholderShimmer {
             0% { background-position: -468px 0; }
             100% { background-position: 468px 0; }
+        }
+        .timeline-connector {
+            background: linear-gradient(180deg, #3B82F6, #60A5FA);
+        }
+        .timeline-connector-pending {
+            background: repeating-linear-gradient(
+                180deg,
+                #E2E8F0 0px,
+                #E2E8F0 6px,
+                transparent 6px,
+                transparent 12px
+            );
         }
     </style>
 </head>
@@ -144,7 +166,7 @@
 
                 <div class="p-8 md:p-12 relative z-10">
                     <!-- Head Details -->
-                    <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-12">
+                    <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
                         <div class="flex items-center gap-5">
                             <div class="w-[72px] h-[72px] rounded-[24px] bg-[#3B82F6] text-white flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
                                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
@@ -158,69 +180,148 @@
                                 </p>
                             </div>
                         </div>
+                        <!-- Countdown Timer / Estimated Finish -->
                         <div class="text-left md:text-center bg-white p-5 rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full md:w-auto mt-4 md:mt-0 z-10 border border-[#F1F5F9]">
-                            <p class="text-[11px] font-black text-[#94A3B8] uppercase tracking-widest mb-1">ESTIMASI SELESAI</p>
-                            <p class="text-[18px] font-black text-[#1E293B]" x-text="result.estimated_finish || 'Menunggu Penilaian'"></p>
+                            <template x-if="result.countdown_target && result.status !== 'Selesai' && result.status !== 'Diambil'">
+                                <div>
+                                    <p class="text-[11px] font-black text-[#94A3B8] uppercase tracking-widest mb-2">⏰ ESTIMASI SELESAI</p>
+                                    <p class="text-[14px] font-bold text-[#64748B] mb-3" x-text="result.estimated_finish"></p>
+                                    <!-- Live Countdown -->
+                                    <div class="flex items-center justify-center gap-2" x-data="countdown(result.countdown_target)">
+                                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl px-3 py-2 min-w-[52px] text-center shadow-md">
+                                            <span class="text-[20px] font-black block leading-none" x-text="days">0</span>
+                                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-80">Hari</span>
+                                        </div>
+                                        <span class="text-slate-300 font-black text-lg">:</span>
+                                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl px-3 py-2 min-w-[52px] text-center shadow-md">
+                                            <span class="text-[20px] font-black block leading-none" x-text="hours">0</span>
+                                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-80">Jam</span>
+                                        </div>
+                                        <span class="text-slate-300 font-black text-lg">:</span>
+                                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl px-3 py-2 min-w-[52px] text-center shadow-md">
+                                            <span class="text-[20px] font-black block leading-none" x-text="minutes">0</span>
+                                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-80">Mnt</span>
+                                        </div>
+                                        <span class="text-slate-300 font-black text-lg">:</span>
+                                        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl px-3 py-2 min-w-[52px] text-center shadow-md animate-countdown-pulse">
+                                            <span class="text-[20px] font-black block leading-none" x-text="seconds">0</span>
+                                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-80">Dtk</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-[11px] font-semibold text-slate-400 mt-2 italic" x-show="isExpired">⚡ Proses mungkin sedikit lebih lama, mohon bersabar</p>
+                                </div>
+                            </template>
+                            <template x-if="result.status === 'Selesai'">
+                                <div class="text-center">
+                                    <div class="text-[48px] mb-1">🎉</div>
+                                    <p class="text-[16px] font-black text-green-600">Cucian Siap Diambil!</p>
+                                    <p class="text-[12px] text-slate-400 font-medium mt-1">Silakan ambil di loket kami</p>
+                                </div>
+                            </template>
+                            <template x-if="result.status === 'Diambil'">
+                                <div class="text-center">
+                                    <div class="text-[48px] mb-1">✅</div>
+                                    <p class="text-[16px] font-black text-emerald-600">Sudah Diambil</p>
+                                    <p class="text-[12px] text-slate-400 font-medium mt-1">Terima kasih!</p>
+                                </div>
+                            </template>
+                            <template x-if="!result.countdown_target && result.status !== 'Selesai' && result.status !== 'Diambil'">
+                                <div>
+                                    <p class="text-[11px] font-black text-[#94A3B8] uppercase tracking-widest mb-1">ESTIMASI SELESAI</p>
+                                    <p class="text-[18px] font-black text-[#1E293B]">Menunggu Penilaian</p>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
-                    <!-- Workflow Timeline -->
-                    <div class="mb-12 mt-6">
-                        <h4 class="text-[16px] font-bold text-[#1E293B] mb-12 flex items-center gap-2">
-                            <svg class="w-[22px] h-[22px] text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            Status Pengerjaan
+                    <!-- Progress Bar Visual -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-[14px] font-bold text-slate-700 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                Progress Keseluruhan
+                            </h4>
+                            <span class="text-[14px] font-black text-blue-600" x-text="result.progress_percentage + '%'"></span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                            <div class="h-full rounded-full bg-gradient-to-r from-blue-500 via-blue-400 to-sky-400 transition-all duration-1000 ease-out relative"
+                                 :style="`width: ${result.progress_percentage}%`">
+                                <div class="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Timeline (Vertical) -->
+                    <div class="mb-8">
+                        <h4 class="text-[16px] font-bold text-[#1E293B] mb-6 flex items-center gap-2">
+                            <svg class="w-[22px] h-[22px] text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Timeline Status Pengerjaan
                         </h4>
                         
-                        <div class="relative w-full mx-auto pb-4">
-                            <!-- Progress Line Background -->
-                            <div class="absolute top-[28px] left-[7%] right-[7%] h-[5px] bg-[#E2E8F0] z-0 rounded-full"></div>
-                            
-                            <!-- Active Progress Line -->
-                            <div class="absolute top-[28px] left-[7%] h-[5px] bg-[#3B82F6] z-0 transition-all duration-1000 ease-out rounded-full shadow-[0_0_12px_rgba(59,130,246,0.6)]" :style="`width: ${calculateProgressWidth()}%`"></div>
-
-                            <div class="relative z-10 flex justify-between">
-                                <template x-for="(status, index) in statuses" :key="index">
-                                    <div class="flex flex-col items-center group relative z-10 w-[70px] sm:w-[14.28%]">
-                                        
-                                        <!-- Node dot -->
-                                        <div class="relative w-[60px] h-[60px] rounded-full flex items-center justify-center transition-all duration-500 mb-3"
-                                             :class="(index <= getCurrentStatusIndex()) ? 'shadow-[0_10px_20px_-5px_rgba(59,130,246,0.4)]' : ''">
-                                             
-                                            <!-- Ring active if current -->
-                                            <div x-show="index === getCurrentStatusIndex() && result.status !== 'Diambil'" class="absolute inset-[-8px] rounded-full bg-[#EFF6FF] animate-pulse-glow z-0"></div>
-
-                                            <!-- True Circle -->
-                                            <div class="relative w-full h-full rounded-full flex items-center justify-center border-[5px] border-white z-10 transition-colors duration-500"
-                                                 :class="(index <= getCurrentStatusIndex()) ? 'bg-[#3B82F6] text-white' : 'bg-[#F8FAFC] text-[#CBD5E1] shadow-inner'">
-                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="status.icon"></path></svg>
-                                            </div>
+                        <div class="relative ml-2 md:ml-6">
+                            <template x-for="(step, index) in result.status_timeline" :key="index">
+                                <div class="flex items-start gap-4 mb-0 relative" :class="{'animate-slide-in': true}" :style="`animation-delay: ${index * 100}ms`">
+                                    <!-- Timeline Node -->
+                                    <div class="flex flex-col items-center shrink-0 relative z-10">
+                                        <!-- Circle -->
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center border-[3px] transition-all duration-500 shrink-0"
+                                             :class="{
+                                                'bg-blue-500 border-blue-300 text-white shadow-[0_0_16px_rgba(59,130,246,0.4)]': index === getCurrentStatusIndex() && result.status !== 'Diambil',
+                                                'bg-green-500 border-green-300 text-white shadow-[0_0_16px_rgba(34,197,94,0.4)]': step.completed && (index < getCurrentStatusIndex() || result.status === 'Diambil'),
+                                                'bg-white border-slate-200 text-slate-300': !step.completed
+                                             }">
+                                            <!-- Check for completed -->
+                                            <svg x-show="step.completed && index < getCurrentStatusIndex()" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                            <!-- Pulse for current -->
+                                            <div x-show="index === getCurrentStatusIndex() && result.status !== 'Diambil'" class="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                                            <!-- Check for final -->
+                                            <svg x-show="step.completed && result.status === 'Diambil'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                            <!-- Number for pending -->
+                                            <span x-show="!step.completed" class="text-[12px] font-black" x-text="index + 1"></span>
                                         </div>
-                                        
-                                        <!-- Label -->
-                                        <div class="text-[13px] font-bold text-center mt-2 w-max transition-colors duration-300 hidden md:block"
-                                             :class="(index <= getCurrentStatusIndex()) ? 'text-[#1E293B]' : 'text-[#94A3B8]'"
-                                             x-text="status.name"></div>
-                                             
-                                        <!-- Mobile Tooltip -->
-                                        <div class="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1E293B] text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap z-30 md:hidden"
-                                             x-text="status.name"></div>
+                                        <!-- Connector Line -->
+                                        <div x-show="index < result.status_timeline.length - 1"
+                                             class="w-[3px] h-12 rounded-full"
+                                             :class="step.completed ? 'timeline-connector' : 'timeline-connector-pending'">
+                                        </div>
                                     </div>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- Current Status PILL -->
-                        <div class="mt-14 flex justify-center w-full">
-                            <div class="border-[2px] border-[#3B82F6] rounded-full p-1.5 flex items-center justify-center bg-white shadow-sm min-w-[300px] z-20">
-                                <div class="w-8 h-8 rounded-full bg-[#EFF6FF] flex items-center justify-center mr-3">
-                                    <div class="w-3.5 h-3.5 rounded-full bg-[#3B82F6]" :class="{'animate-pulse': result.status !== 'Diambil'}"></div>
+                                    
+                                    <!-- Content -->
+                                    <div class="pt-1.5 pb-6 flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-[14px] font-bold"
+                                                  :class="{
+                                                    'text-blue-600': index === getCurrentStatusIndex() && result.status !== 'Diambil',
+                                                    'text-slate-800': step.completed && index !== getCurrentStatusIndex(),
+                                                    'text-slate-400': !step.completed
+                                                  }"
+                                                  x-text="step.status"></span>
+                                            <!-- Current badge -->
+                                            <span x-show="index === getCurrentStatusIndex() && result.status !== 'Diambil'"
+                                                  class="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full animate-pulse">
+                                                Saat ini
+                                            </span>
+                                            <!-- Completed badge -->
+                                            <span x-show="step.completed && index < getCurrentStatusIndex()"
+                                                  class="text-[10px] font-bold bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+                                                Selesai
+                                            </span>
+                                        </div>
+                                        <!-- Timestamp -->
+                                        <p x-show="step.timestamp" class="text-[12px] font-medium text-slate-400 mt-1 flex items-center gap-1.5">
+                                            <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            <span x-text="step.timestamp ? formatTimestamp(step.timestamp) : ''"></span>
+                                            <template x-if="step.changed_by">
+                                                <span class="text-slate-300">• oleh <span x-text="step.changed_by" class="text-slate-400"></span></span>
+                                            </template>
+                                        </p>
+                                        <p x-show="!step.timestamp" class="text-[12px] font-medium text-slate-300 mt-1 italic">
+                                            Menunggu proses...
+                                        </p>
+                                    </div>
                                 </div>
-                                <p class="text-[15px] font-bold text-[#1E293B] pr-5">
-                                    Status saat ini: <span x-text="result.status" class="text-[#3B82F6]"></span>
-                                </p>
-                            </div>
+                            </template>
                         </div>
-
                     </div>
 
                     <!-- Order Info Grid -->
@@ -235,7 +336,7 @@
                         </div>
                         <div class="bg-[#F8FAFC] p-5 rounded-[20px] ring-1 ring-slate-100">
                             <p class="text-[11px] font-black text-[#94A3B8] uppercase tracking-widest mb-2">TANGGAL MASUK</p>
-                            <p class="text-[16px] font-black text-[#1E293B]" x-text="formatDateStr(result.created_at)"></p>
+                            <p class="text-[16px] font-black text-[#1E293B]" x-text="result.created_at"></p>
                         </div>
                         <div class="bg-[#F0F7FF] border border-[#E0EFFF] p-5 rounded-[20px] relative flex flex-col justify-center">
                             <p class="text-[11px] font-black text-[#3B82F6] uppercase tracking-widest mb-1">TOTAL BIAYA</p>
@@ -250,10 +351,54 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Photo Documentation Gallery (for customers) -->
+                    <template x-if="result.photos && (result.photos.masuk?.length || result.photos.proses?.length || result.photos.selesai?.length)">
+                        <div class="mt-8">
+                            <h4 class="text-[16px] font-bold text-[#1E293B] mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                Dokumentasi Foto Cucian
+                            </h4>
+
+                            <template x-for="[type, label, color] in [['masuk', '📥 Saat Masuk', 'blue'], ['proses', '🔄 Saat Proses', 'amber'], ['selesai', '✅ Saat Selesai', 'emerald']]" :key="type">
+                                <div x-show="result.photos[type]?.length > 0" class="mb-4">
+                                    <p class="text-[12px] font-bold mb-2 uppercase tracking-widest"
+                                       :class="color === 'blue' ? 'text-blue-500' : (color === 'amber' ? 'text-amber-500' : 'text-emerald-500')"
+                                       x-text="label"></p>
+                                    <div class="grid grid-cols-3 md:grid-cols-4 gap-2">
+                                        <template x-for="photo in result.photos[type]" :key="photo.url">
+                                            <div class="relative group rounded-xl overflow-hidden border border-slate-100 shadow-sm aspect-square cursor-pointer" @click="lightboxUrl = photo.url; lightboxOpen = true">
+                                                <img :src="photo.url" :alt="photo.caption || 'Dokumentasi'" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                                                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <p class="text-[10px] text-white font-medium truncate" x-text="photo.caption || photo.created_at"></p>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- Last Updated Info -->
+                    <div class="mt-6 text-center" x-show="result.status_updated_at">
+                        <p class="text-[12px] text-slate-400 font-medium flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Terakhir diupdate: <span x-text="result.status_updated_at" class="font-semibold text-slate-500"></span>
+                        </p>
+                    </div>
                     
                 </div>
             </div>
         </template>
+
+        <!-- Photo Lightbox -->
+        <div x-show="lightboxOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="lightboxOpen = false" @keydown.escape.window="lightboxOpen = false">
+            <img :src="lightboxUrl" class="max-w-full max-h-[90vh] rounded-2xl shadow-2xl" @click.stop>
+            <button @click="lightboxOpen = false" class="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
         
         <!-- Footer Info -->
         <div class="mt-auto pt-8 text-center text-[12px] text-slate-400 font-medium z-10" x-show="!result">
@@ -264,22 +409,61 @@
     </div>
 
     <script>
+        // Countdown Timer Component
+        function countdown(targetDate) {
+            return {
+                days: '00',
+                hours: '00',
+                minutes: '00',
+                seconds: '00',
+                isExpired: false,
+                interval: null,
+
+                init() {
+                    this.updateCountdown();
+                    this.interval = setInterval(() => this.updateCountdown(), 1000);
+                },
+
+                updateCountdown() {
+                    const target = new Date(targetDate).getTime();
+                    const now = new Date().getTime();
+                    const diff = target - now;
+
+                    if (diff <= 0) {
+                        this.days = '00';
+                        this.hours = '00';
+                        this.minutes = '00';
+                        this.seconds = '00';
+                        this.isExpired = true;
+                        if (this.interval) clearInterval(this.interval);
+                        return;
+                    }
+
+                    this.isExpired = false;
+                    this.days = String(Math.floor(diff / (1000 * 60 * 60 * 24))).padStart(2, '0');
+                    this.hours = String(Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+                    this.minutes = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+                    this.seconds = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
+                },
+
+                destroy() {
+                    if (this.interval) clearInterval(this.interval);
+                }
+            }
+        }
+
         function trackingApp() {
             return {
                 searchQuery: '',
                 isLoading: false,
                 errorMsg: '',
                 result: null,
+                lightboxOpen: false,
+                lightboxUrl: '',
                 
-                // Defined workflow mimicking exact screenshot requested logic
                 statuses: [
-                    { name: 'Diterima', icon: 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4' },
-                    { name: 'Dicuci', icon: 'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M7 8h2' },
-                    { name: 'Dikeringkan', icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z' },
-                    { name: 'Disetrika', icon: 'M4 17h14c1.5 0 3-1.5 3-3 0-3-3-5-6-5H4v8z M4 9V6c0-1.5 1.5-3 3-3h5c1.5 0 3 1.5 3 3v3' },
-                    { name: 'Quality Control', icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z' },
-                    { name: 'Selesai', icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' },
-                    { name: 'Diambil', icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z M9 15l2 2 4-4' }
+                    'Diterima', 'Dicuci', 'Dikeringkan', 'Disetrika',
+                    'Quality Control', 'Selesai', 'Diambil'
                 ],
                 
                 init() {
@@ -313,7 +497,6 @@
                             throw new Error(json.message || 'Terjadi kesalahan sistem.');
                         }
                         
-                        // Fake slight delay for smooth transition effect if too fast
                         setTimeout(() => {
                             this.result = json.data;
                             this.isLoading = false;
@@ -329,24 +512,20 @@
                 
                 getCurrentStatusIndex() {
                     if (!this.result) return -1;
-                    const dbStatus = this.result.status;
-                    
-                    // Map db string to array index (7 items logic from screenshot)
-                    const map = {
-                        'Diterima': 0, 'Dicuci': 1, 'Dikeringkan': 2, 'Disetrika': 3,
-                        'Quality Control': 4,
-                        'Selesai': 5, 'Diambil': 6
-                    };
-                    
-                    return map[dbStatus] !== undefined ? map[dbStatus] : 0;
+                    return this.statuses.indexOf(this.result.status);
                 },
                 
-                calculateProgressWidth() {
-                    const idx = this.getCurrentStatusIndex();
-                    if (idx < 0) return 0;
-                    if (idx === 0) return 0;
-                    if (idx === 6) return 100;
-                    return (idx / (this.statuses.length - 1)) * 100; // 6 segments for 7 items
+                formatTimestamp(isoString) {
+                    if (!isoString) return '';
+                    const d = new Date(isoString);
+                    if (isNaN(d)) return isoString;
+                    
+                    const options = { 
+                        day: '2-digit', month: 'short', year: 'numeric', 
+                        hour: '2-digit', minute: '2-digit',
+                        hour12: false 
+                    };
+                    return d.toLocaleDateString('id-ID', options);
                 },
                 
                 formatDateStr(datetime) {

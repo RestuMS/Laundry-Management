@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'admin@laundry.com'],
             [
                 'name' => 'Admin Master',
-                'password' => bcrypt('password123'),
+                'password' => 'password123',
                 'role' => 'admin',
             ]
         );
@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'kasir@laundry.com'],
             [
                 'name' => 'Kasir Cepat',
-                'password' => bcrypt('password123'),
+                'password' => 'password123',
                 'role' => 'kasir',
             ]
         );
@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'owner@laundry.com'],
             [
                 'name' => 'Owner Bos',
-                'password' => bcrypt('password123'),
+                'password' => 'password123',
                 'role' => 'owner',
             ]
         );

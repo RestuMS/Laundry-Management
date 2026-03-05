@@ -9,7 +9,11 @@ export default defineConfig({
         }),
     ],
     server: {
-        host: '127.0.0.1', // Ensure IPv4 binding for fast Windows localhost
+        host: '127.0.0.1',
         port: 5173,
+        hmr: {
+            host: '127.0.0.1',
+        },
+        strictPort: true,
     }
 });

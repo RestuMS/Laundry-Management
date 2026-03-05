@@ -21,7 +21,7 @@
     <!-- Header texts -->
     <div class="text-center mb-6">
         <h2 class="text-2xl font-bold text-[#145eb3] mb-1">Welcome Back!</h2>
-        <p class="text-[13px] text-gray-500">Please login to your account</p>
+        <p class="text-[13px] text-gray-500">Login khusus untuk karyawan & admin</p>
     </div>
 
     @if (session('success'))
@@ -85,7 +85,7 @@
                 </label>
             </div>
             <div class="text-[13px]">
-                <a href="#" class="font-medium text-[#145eb3] hover:underline">Forgot Password?</a>
+                <a href="{{ route('password.request') }}" class="font-medium text-[#145eb3] hover:underline">Forgot Password?</a>
             </div>
         </div>
 
@@ -99,9 +99,12 @@
 
     <!-- Footer Text -->
     <div class="mt-6 text-center border-t border-gray-100 pt-5">
-        <p class="text-[12px] font-medium text-[#145eb3]">
-            Don't have an account? 
-            <a href="{{ route('register') }}" class="font-bold underline">Register Now</a>
+        <a href="{{ route('landing') }}" class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#145eb3] hover:underline mb-3">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Kembali ke Beranda
+        </a>
+        <p class="text-[12px] font-medium text-gray-400">
+            &copy; {{ date('Y') }} LaundryPro. All rights reserved.
         </p>
     </div>
 </div>

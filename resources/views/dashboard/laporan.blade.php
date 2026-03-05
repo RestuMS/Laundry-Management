@@ -54,26 +54,37 @@
     <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-5">
         
         <!-- Date Filters -->
-        <div class="flex items-center gap-3 bg-white/50 backdrop-blur-md p-1.5 rounded-2xl border border-white shadow-sm">
-            <button @click="filterDate = 'Today'" :class="filterDate === 'Today' ? 'bg-white shadow-md text-primary font-bold' : 'text-slate-500 hover:text-slate-700 font-medium'" class="px-5 py-2 rounded-xl text-[13.5px] transition-all">Hari Ini</button>
-            <button @click="filterDate = 'This Week'" :class="filterDate === 'This Week' ? 'bg-white shadow-md text-primary font-bold' : 'text-slate-500 hover:text-slate-700 font-medium'" class="px-5 py-2 rounded-xl text-[13.5px] transition-all">Minggu Ini</button>
-            <button @click="filterDate = 'This Month'" :class="filterDate === 'This Month' ? 'bg-white shadow-md text-primary font-bold' : 'text-slate-500 hover:text-slate-700 font-medium'" class="px-5 py-2 rounded-xl text-[13.5px] transition-all">Bulan Ini</button>
+        <form action="{{ route('laporan.index') }}" method="GET" class="flex flex-col sm:flex-row items-center gap-1.5 md:gap-3 bg-white/50 backdrop-blur-md p-1.5 md:p-3 rounded-2xl border border-white shadow-sm w-full xl:w-auto">
             
-            <!-- Custom Date Range -->
-            <div class="h-6 w-px bg-slate-300 mx-1"></div>
-            <button class="px-4 py-2 text-slate-500 hover:text-primary transition-colors flex items-center gap-2 text-[13.5px] font-bold">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                Custom
-            </button>
-        </div>
+            <div class="flex items-center gap-2 md:gap-3 w-full sm:w-auto overflow-x-auto no-scrollbar pb-2 sm:pb-0">
+                @if(request('date'))
+                    <a href="{{ route('laporan.index') }}" class="px-3 md:px-5 py-2 rounded-xl text-[12px] md:text-[13.5px] font-bold text-slate-500 hover:text-primary transition-all whitespace-nowrap">
+                        Reset (Hari Ini)
+                    </a>
+                @else
+                    <div class="px-4 md:px-5 py-2 rounded-xl text-[12px] md:text-[13.5px] font-bold bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-primary transition-all whitespace-nowrap">
+                        Filter Default
+                    </div>
+                @endif
+                
+                <div class="h-6 w-px bg-slate-300 mx-1 shrink-0"></div>
+            </div>
+            
+            <div class="relative w-full sm:w-auto mt-2 sm:mt-0">
+                <span class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest rounded shadow-[0_1px_2px_rgba(0,0,0,0.02)] z-10">Pilih Hari/Tgl</span>
+                <div class="relative flex items-center bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-100 hover:border-blue-200 transition-colors">
+                    <input type="date" name="date" value="{{ $inputDate ?? '' }}" onchange="this.form.submit()" class="w-full sm:w-[155px] px-3 md:px-4 py-2 bg-transparent text-[13px] md:text-[14px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-400/30 rounded-xl cursor-pointer">
+                </div>
+            </div>
+        </form>
 
         <!-- Export Buttons -->
         <div class="flex gap-4 w-full xl:w-auto">
-            <a href="{{ route('laporan.export.excel', ['month' => request('month', \Carbon\Carbon::now()->format('Y-m'))]) }}" class="flex-1 xl:flex-none btn-excel text-white px-6 py-2.5 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-[14px] btn-filter group">
+            <a href="{{ route('laporan.export.excel', ['date' => request('date')]) }}" class="flex-1 xl:flex-none btn-excel text-white px-6 py-2.5 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-[14px] btn-filter group">
                 <svg class="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Export Excel
             </a>
-            <a href="{{ route('laporan.export.pdf', ['month' => request('month', \Carbon\Carbon::now()->format('Y-m'))]) }}" target="_blank" class="flex-1 xl:flex-none btn-pdf text-white px-6 py-2.5 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-[14px] btn-filter group">
+            <a href="{{ route('laporan.export.pdf', ['date' => request('date')]) }}" target="_blank" class="flex-1 xl:flex-none btn-pdf text-white px-6 py-2.5 rounded-2xl flex items-center justify-center gap-2.5 font-bold text-[14px] btn-filter group">
                 <svg class="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 Export PDF
             </a>
@@ -111,9 +122,9 @@
                     14.5%
                 </div>
             </div>
-            <h4 class="text-[14px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Omset Pemasukan (Bulan Ini)</h4>
+            <h4 class="text-[14px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Pemasukan ({{ $filterText }})</h4>
             <div class="text-[26px] font-black text-[#5B8DEF]">Rp {{ number_format($omsetBulanIni, 0, ',', '.') }}</div>
-            <div class="text-[13px] text-slate-400 font-medium mt-2">Kotor Belum Dipotong</div>
+            <div class="text-[13px] text-slate-400 font-medium mt-2">Omset Kotor</div>
         </div>
 
         <!-- Pengeluaran -->
@@ -123,9 +134,9 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
                 </div>
             </div>
-            <h4 class="text-[14px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Pengeluaran (Bulan Ini)</h4>
+            <h4 class="text-[14px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Pengeluaran ({{ $filterText }})</h4>
             <div class="text-[26px] font-black text-slate-800">Rp {{ number_format($pengeluaranBulanIni, 0, ',', '.') }}</div>
-            <div class="text-[13px] text-slate-400 font-medium mt-2">Operasional / Bahan</div>
+            <div class="text-[13px] text-slate-400 font-medium mt-2">Operasional / Kas Terpotong</div>
         </div>
 
         <!-- Laba Bersih -->
@@ -137,9 +148,9 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
                 </div>
-                <h4 class="text-[14px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Laba Bersih (Bulan Ini)</h4>
+                <h4 class="text-[14px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Laba Bersih ({{ $filterText }})</h4>
                 <div class="text-[26px] font-black text-[#20D071]">Rp {{ number_format($labaBersihBulanIni, 0, ',', '.') }}</div>
-                <div class="text-[13px] text-slate-400 font-medium mt-2">Omset dikurangi Pengeluaran</div>
+                <div class="text-[13px] text-slate-400 font-medium mt-2">Omset Terpotong Operasional</div>
             </div>
         </div>
 

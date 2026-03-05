@@ -43,7 +43,7 @@ class SettingController extends Controller
             'fonnte_token' => 'nullable|string',
         ]);
 
-        $keys = ['store_name', 'store_address', 'store_phone', 'receipt_footer', 'fonnte_token'];
+        $keys = ['store_name', 'store_address', 'store_phone', 'receipt_footer', 'fonnte_token', 'auto_wa_notification'];
 
         foreach ($keys as $key) {
             Setting::updateOrCreate(

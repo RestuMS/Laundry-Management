@@ -11,31 +11,40 @@ use Carbon\Carbon;
 
 class ReportController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $today = Carbon::today();
-        $startOfWeek = Carbon::now()->startOfWeek();
-        $startOfMonth = Carbon::now()->startOfMonth();
+        $inputDate = $request->input('date');
+        $baseDate = $inputDate ? Carbon::parse($inputDate)->endOfDay() : Carbon::now()->endOfDay();
+        
+        $startOfMonth = $baseDate->copy()->startOfMonth();
+        $endOfMonth = $baseDate->copy()->endOfMonth();
+        $startOfWeek = $baseDate->copy()->startOfWeek();
+        
+        $isCurrentMonth = Carbon::now()->format('Y-m') === $baseDate->format('Y-m');
 
-        $omsetHariIni = Order::whereDate('created_at', $today)->where('payment_status', 'Lunas')->sum('total_price');
-        $omsetMingguIni = Order::whereBetween('created_at', [$startOfWeek, Carbon::now()])->where('payment_status', 'Lunas')->sum('total_price');
-        $omsetBulanIni = Order::whereBetween('created_at', [$startOfMonth, Carbon::now()])->where('payment_status', 'Lunas')->sum('total_price');
-
-        $pengeluaranBulanIni = Expense::whereBetween('date', [$startOfMonth, Carbon::now()])->sum('amount');
+        $omsetHariIni = Order::whereDate('created_at', Carbon::today())->where('payment_status', 'Lunas')->sum('total_price');
+        $omsetMingguIni = Order::whereBetween('created_at', [$startOfWeek, $baseDate])->where('payment_status', 'Lunas')->sum('total_price');
+        
+        // Compute for the specific Date Input
+        $omsetBulanIni = Order::whereDate('created_at', $baseDate)->where('payment_status', 'Lunas')->sum('total_price');
+        $pengeluaranBulanIni = Expense::whereDate('date', $baseDate->format('Y-m-d'))->sum('amount');
         $labaBersihBulanIni = $omsetBulanIni - $pengeluaranBulanIni;
 
-        // Line Chart (Daily revenue for this week)
+        // Line Chart (Daily revenue for the last 7 days from the base date)
         $chartLineLabels = collect();
         $chartLineData = collect();
         for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::today()->subDays($i);
-            $chartLineLabels->push($date->locale('id')->shortDayName);
+            $date = $baseDate->copy()->subDays($i);
+            $chartLineLabels->push($date->locale('id')->shortDayName . ' ' . $date->format('d'));
             $sum = Order::whereDate('created_at', $date)->where('payment_status', 'Lunas')->sum('total_price');
             $chartLineData->push($sum / 1000); // in thousands
         }
 
-        // Bar Chart (Top Services)
-        $topServices = tap(OrderItem::selectRaw('service_name, count(*) as total')
+        // Bar Chart (Top Services for the selected date)
+        $topServices = tap(OrderItem::whereHas('order', function($q) use ($baseDate) {
+                $q->whereDate('created_at', $baseDate);
+            })
+            ->selectRaw('service_name, count(*) as total')
             ->groupBy('service_name')
             ->orderByDesc('total')
             ->take(5)
@@ -48,27 +57,32 @@ class ReportController extends Controller
 
         $chartBarLabels = $topServices->pluck('service_name');
         $chartBarData = $topServices->pluck('percentage');
+        
+        $filterText = $baseDate->translatedFormat('d M Y');
 
         return view('dashboard.laporan', compact(
             'omsetHariIni', 'omsetMingguIni', 'omsetBulanIni',
             'pengeluaranBulanIni', 'labaBersihBulanIni',
             'chartLineLabels', 'chartLineData',
-            'chartBarLabels', 'chartBarData'
+            'chartBarLabels', 'chartBarData',
+            'filterText', 'isCurrentMonth',
+            'inputDate'
         ));
     }
 
     public function exportPdf(Request $request)
     {
-        $month = $request->input('month', Carbon::now()->format('Y-m'));
-        $startOfMonth = Carbon::parse($month)->startOfMonth();
-        $endOfMonth = Carbon::parse($month)->endOfMonth();
+        $date = $request->input('date');
+        $baseDate = $date ? Carbon::parse($date) : Carbon::now();
+        $startOfMonth = $baseDate->copy()->startOfMonth();
+        $endOfMonth = $baseDate->copy()->endOfMonth();
 
-        $orders = Order::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+        $orders = Order::whereDate('created_at', $baseDate)
                        ->where('payment_status', 'Lunas')
                        ->orderBy('created_at')
                        ->get();
                        
-        $expenses = Expense::whereBetween('date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+        $expenses = Expense::whereDate('date', $baseDate->format('Y-m-d'))
                            ->orderBy('date')
                            ->get();
 
@@ -76,25 +90,27 @@ class ReportController extends Controller
         $pengeluaran = $expenses->sum('amount');
         $laba = $omset - $pengeluaran;
 
+        $month = $baseDate->format('Y-m');
         return view('dashboard.laporan_print', compact('month', 'orders', 'expenses', 'omset', 'pengeluaran', 'laba'));
     }
 
     public function exportExcel(Request $request)
     {
-        $month = $request->input('month', Carbon::now()->format('Y-m'));
-        $startOfMonth = Carbon::parse($month)->startOfMonth();
-        $endOfMonth = Carbon::parse($month)->endOfMonth();
+        $date = $request->input('date');
+        $baseDate = $date ? Carbon::parse($date) : Carbon::now();
+        $startOfMonth = $baseDate->copy()->startOfMonth();
+        $endOfMonth = $baseDate->copy()->endOfMonth();
 
-        $orders = Order::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+        $orders = Order::whereDate('created_at', $baseDate)
                        ->where('payment_status', 'Lunas')
                        ->orderBy('created_at')
                        ->get();
                        
-        $expenses = Expense::whereBetween('date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+        $expenses = Expense::whereDate('date', $baseDate->format('Y-m-d'))
                            ->orderBy('date')
                            ->get();
 
-        $fileName = "Laporan_Keuangan_".date('F_Y', strtotime($month)).".csv";
+        $fileName = "Laporan_Keuangan_".$baseDate->format('d_M_Y').".csv";
         
         $headers = array(
             "Content-type"        => "text/csv",

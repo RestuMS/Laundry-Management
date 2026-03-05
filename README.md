@@ -1,66 +1,208 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🧺 LaundryPro - Sistem Manajemen Laundry
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi manajemen laundry profesional berbasis web untuk mengelola seluruh operasional bisnis laundry mulai dari penerimaan order, pelacakan status, manajemen keuangan, hingga notifikasi otomatis ke pelanggan.
 
-## About Laravel
+## ✨ Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 👥 Multi-Role Authentication
+- **Admin** – Akses penuh: dashboard, order, layanan, keuangan, laporan, karyawan, pengaturan
+- **Kasir** – Fokus operasional: terima order, scan pickup, kelola pelanggan
+- **Owner** – Monitoring bisnis: omset, laporan, pengeluaran, inventaris
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 📦 Manajemen Order
+- CRUD order dengan multi-layanan per order
+- 7 tahapan status: Diterima → Dicuci → Dikeringkan → Disetrika → Quality Control → Selesai → Diambil
+- Status history (jejak perubahan) dengan timestamp dan nama pengubah
+- Estimasi waktu selesai
+- QR Code per order untuk scan pickup
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 💰 Pembayaran & Keuangan
+- **Pembayaran Parsial (DP/Cicilan)** 
+– Catat pembayaran bertahap, auto-update status
+- Manajemen pengeluaran harian
+- Laporan keuangan dengan filter tanggal
+- Export laporan ke PDF & Excel (CSV)
+- Dashboard omset real-time
 
-## Learning Laravel
+### 📊 Dashboard & Laporan
+- **Admin Dashboard**: Total order, order diproses, omset hari ini, chart pendapatan mingguan, top layanan
+- **Owner Dashboard**: Omset bulanan + pertumbuhan, pelanggan loyal, ranking layanan, grafik performa
+- **Kasir Dashboard**: Order hari ini, quick search, scan QR pickup
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 🔔 Notifikasi
+- **WhatsApp Otomatis** via Fonnte API – dikirim saat status order berubah
+- **Notifikasi In-App** (Bell Icon) – real-time dengan polling
+- Reminder otomatis via scheduling
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 🖨️ Cetak Struk
+- Format thermal printer 58mm & 80mm
+- Informasi toko dinamis dari pengaturan
+- Riwayat pembayaran DP tercetak di struk
+- QR Code pada struk
+- Auto-print saat halaman dibuka
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 🔒 Keamanan
+- Register publik dinonaktifkan (hanya Admin bisa tambah user)
+- Logout menggunakan POST (CSRF protected)
+- Rate limiting pada login (5 percobaan per menit)
+- Activity Log/Audit Trail (semua aksi tercatat)
+- Soft Delete pada semua model utama
+- Role-based middleware
 
-## Laravel Sponsors
+### 📱 Fitur Lainnya
+- Tracking order publik via QR Code / nomor resi
+- Manajemen pelanggan dengan statistik
+- Manajemen inventaris (bahan baku) dengan auto-deduct
+- CRUD layanan
+- Manajemen karyawan
+- Pengaturan toko (nama, alamat, telepon, logo, footer struk)
+- Password reset via email
+- Responsive design (mobile-first)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+## 🛠️ Teknologi
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+| Komponen | Teknologi |
+|----------|-----------|
+| Framework | Laravel 10 |
+| PHP | >= 8.1 |
+| Database | MySQL |
+| Frontend | Blade + Tailwind CSS + Alpine.js |
+| Charts | Chart.js |
+| Icons | Phosphor Icons |
+| QR Code | chillerlan/php-qrcode |
+| WA Gateway | Fonnte API |
+| Build Tool | Vite |
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 📋 Persyaratan Sistem
 
-## Code of Conduct
+- PHP >= 8.1
+- MySQL >= 5.7 / MariaDB >= 10.3
+- Composer >= 2.x
+- Node.js >= 16.x
+- NPM >= 8.x
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 🚀 Instalasi
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 1. Clone Repository
+```bash
+git clone <repository-url> laundry-app
+cd laundry-app
+```
 
-## License
+### 2. Install Dependencies
+```bash
+composer install
+npm install
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 3. Konfigurasi Environment
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+Edit file `.env` dan sesuaikan konfigurasi database:
+```env
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=db_laundry
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+### 4. Buat Database
+Buat database MySQL dengan nama `db_laundry` (atau sesuai konfigurasi `.env`).
+
+### 5. Jalankan Migration & Seeder
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+### 6. Build Frontend Assets
+```bash
+npm run build
+```
+
+### 7. Jalankan Server
+```bash
+php artisan serve
+```
+
+Aplikasi akan berjalan di `http://localhost:8000`
+
+---
+
+## 🔑 Akun Default
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@laundry.com | password123 |
+| Kasir | kasir@laundry.com | password123 |
+| Owner | owner@laundry.com | password123 |
+
+> ⚠️ **Penting:** Segera ubah password default setelah login pertama kali!
+
+---
+
+## ⚙️ Konfigurasi WhatsApp (Opsional)
+
+Untuk mengaktifkan notifikasi WhatsApp otomatis:
+
+1. Daftar di [Fonnte.com](https://fonnte.com)
+2. Dapatkan API Token
+3. Masukkan token di menu **Pengaturan** → **Fonnte Token**
+
+---
+
+## 📁 Struktur Direktori
+
+```
+app/
+├── Http/
+│   ├── Controllers/     # Semua controller
+│   ├── Middleware/       # Auth & Role middleware
+│   └── Requests/        # Form validation
+├── Models/              # Eloquent models
+├── Observers/           # Order observer (auto WA + log)
+└── Services/            # WA notification service
+
+resources/views/
+├── auth/                # Login, forgot password
+├── dashboard/           # Semua halaman dashboard
+├── layouts/             # Layout utama
+└── tracking/            # Tracking publik
+
+database/
+├── migrations/          # Schema database
+└── seeders/             # Data awal (user default)
+```
+
+---
+
+## 🆘 Troubleshooting
+
+### Login tidak bisa
+- Pastikan sudah menjalankan `php artisan db:seed`
+- Periksa konfigurasi database di `.env`
+
+### Struk tidak tercetak
+- Pastikan browser mengizinkan popup
+- Cek pengaturan printer (58mm atau 80mm)
+
+### WhatsApp tidak terkirim
+- Pastikan Fonnte Token sudah diisi di Pengaturan
+- Periksa format nomor HP pelanggan (diawali 08xxx)
+
+---
+
+## 📄 Lisensi
+
+Hak cipta dilindungi. Software ini dilisensikan untuk penggunaan komersial oleh pemilik lisensi.

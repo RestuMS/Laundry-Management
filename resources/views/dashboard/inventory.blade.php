@@ -20,13 +20,19 @@
 <div x-data="inventoryManager()">
 
     <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <form action="{{ route('inventory.index') }}" method="GET" class="flex-1 w-full" x-ref="searchForm">
-            <div class="w-full bg-white/70 backdrop-blur-md border border-white/80 rounded-[20px] shadow-[0_4px_20px_rgb(0,0,0,0.03)] flex items-center h-[56px] px-5 focus-within:ring-4 focus-within:ring-blue-100 transition-all">
+        <form action="{{ route('inventory.index') }}" method="GET" class="flex-1 w-full flex flex-col sm:flex-row gap-3" x-ref="searchForm">
+            <!-- Search Input -->
+            <div class="w-full sm:flex-1 bg-white/70 backdrop-blur-md border border-white/80 rounded-[20px] shadow-[0_4px_20px_rgb(0,0,0,0.03)] flex items-center h-[56px] px-5 focus-within:ring-4 focus-within:ring-blue-100 transition-all">
                 <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari bahan baku (contoh: Deterjen, Parfum)..." class="w-full h-full bg-transparent border-none focus:ring-0 text-[15px] text-slate-600 placeholder-slate-400 font-medium px-4" />
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari bahan baku (contoh: Deterjen, Parfum)..." class="w-full h-full bg-transparent border-none focus:ring-0 text-[15px] text-slate-600 placeholder-slate-400 font-medium px-4 outline-none" />
                 @if(request('search'))
                 <a href="{{ route('inventory.index') }}" class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-300"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></a>
                 @endif
+            </div>
+
+            <!-- Calendar / Month Filter -->
+            <div class="w-full sm:w-[220px] shrink-0">
+                <input type="month" name="month" value="{{ request('month', '') }}" onchange="this.form.submit()" class="w-full h-[56px] bg-white/70 backdrop-blur-md border border-white/80 rounded-[20px] shadow-[0_4px_20px_rgb(0,0,0,0.03)] text-[15px] px-5 text-slate-600 font-medium focus:ring-4 focus:ring-blue-100 transition-all outline-none">
             </div>
         </form>
 

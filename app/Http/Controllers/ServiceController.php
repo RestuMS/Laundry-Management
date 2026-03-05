@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\Service;
+use App\Http\Requests\StoreServiceRequest;
+use App\Http\Requests\UpdateServiceRequest;
 
 class ServiceController extends Controller
 {
@@ -14,32 +16,16 @@ class ServiceController extends Controller
         return view('dashboard.layanan', compact('services'));
     }
 
-    public function store(Request $request)
+    public function store(StoreServiceRequest $request)
     {
-        $request->validate([
-            'service_name' => 'required|string|max:255',
-            'icon' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'unit' => 'required|string|max:50',
-        ]);
-
-        Service::create($request->all());
+        Service::create($request->validated());
 
         return redirect()->route('layanan.index')->with('success', 'Layanan berhasil ditambahkan!');
     }
 
-    public function update(Request $request, Service $layanan)
+    public function update(UpdateServiceRequest $request, Service $layanan)
     {
-        $request->validate([
-            'service_name' => 'required|string|max:255',
-            'icon' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'unit' => 'required|string|max:50',
-        ]);
-
-        $layanan->update($request->all());
+        $layanan->update($request->validated());
 
         return redirect()->route('layanan.index')->with('success', 'Layanan berhasil diperbarui!');
     }
