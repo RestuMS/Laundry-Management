@@ -166,15 +166,19 @@
 
     <!-- Paper Size Selector -->
     <div class="size-selector no-print">
-        <p style="font-weight: bold; margin-bottom: 8px; font-size: 13px;">📐 Ukuran Kertas:</p>
+        <p style="font-weight: bold; margin-bottom: 8px; font-size: 13px;">📐 Ukuran Kertas Thermal:</p>
         <label>
             <input type="radio" name="paper" value="58" checked onclick="setPaperSize('58')">
-            58mm (paling umum)
+            58mm (Printer Kasir Kecil)
         </label>
         <label>
             <input type="radio" name="paper" value="80" onclick="setPaperSize('80')">
-            80mm (lebar)
+            80mm (Printer Kasir Besar)
         </label>
+        
+        <div style="margin-top: 10px; font-size: 11px; color: #4b5563; background: #f3f4f6; padding: 6px; border-radius: 6px;">
+            💡 <b>Tips HP Android:</b> Nyalakan Bluetooth, 'Pairing' dengan printer, klik Cetak, lalu pilih printer Anda dari daftar PDF/Printer sistem.
+        </div>
     </div>
 
     <div class="no-print">

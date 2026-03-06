@@ -21,7 +21,7 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <!-- Add Button Area -->
-        <button @click="openModal = true" type="button" class="md:col-span-1 h-[80px] bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-[24px] flex items-center justify-center gap-3 font-bold text-[18px] shadow-[0_8px_25px_rgba(239,68,68,0.3)] btn-float tracking-wide transition-all w-full">
+        <button @click="openAddModal()" type="button" class="md:col-span-1 h-[80px] bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-[24px] flex items-center justify-center gap-3 font-bold text-[18px] shadow-[0_8px_25px_rgba(239,68,68,0.3)] btn-float tracking-wide transition-all w-full">
             <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
             </div>
@@ -89,13 +89,15 @@
                         <td class="py-3 md:py-4 px-3 md:px-4 font-black tracking-tight text-red-500 text-[14px] md:text-[16px] whitespace-nowrap">
                             Rp {{ number_format($exp->amount, 0, ',', '.') }}
                         </td>
-                        <td class="py-3 md:py-4 px-4 md:px-6 text-right">
-                            <form :action="deleteFormAction" method="POST" x-ref="'deleteForm_' + {{ $exp->id }}" @submit.prevent>
-                                @csrf @method('DELETE')
+                        <td class="py-3 md:py-4 px-4 md:px-6 text-right w-[100px]">
+                            <div class="flex items-center justify-end gap-2">
+                                <button type="button" @click="openEditModal({{ $exp->toJson() }})" class="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-blue-50 text-blue-500 border border-blue-100 hover:bg-blue-500 hover:text-white transition-all flex items-center justify-center">
+                                    <svg class="w-4 h-4 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                </button>
                                 <button type="button" @click="confirmDelete('{{ route('expense.destroy', $exp->id) }}')" class="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center ml-auto">
                                     <svg class="w-4 h-4 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
-                            </form>
+                            </div>
                         </td>
                     </tr>
                     @empty
@@ -121,17 +123,18 @@
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-slate-800 tracking-tight pt-1">Keluar Kas</h3>
+                    <h3 class="text-xl font-bold text-slate-800 tracking-tight pt-1" x-text="isEdit ? 'Ubah Pengeluaran' : 'Catat Kas Keluar'">Keluar Kas</h3>
                     <p class="text-[12px] font-medium text-slate-400">Beli Token, Plastik, Gaji, dll</p>
                 </div>
             </div>
             
-            <form action="{{ route('expense.store') }}" method="POST">
+            <form :action="formUrl" method="POST">
                 @csrf
+                <input type="hidden" name="_method" :value="isEdit ? 'PUT' : 'POST'">
                 <div class="space-y-4">
                     <div>
                         <label class="block text-[13px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nama Pengeluaran</label>
-                        <input type="text" name="name" placeholder="cth: Belanja Deterjen Baju" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-700 outline-none focus:ring-2 focus:ring-red-400/30 transition-shadow">
+                        <input type="text" name="name" x-model="formData.name" placeholder="cth: Belanja Deterjen Baju" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-700 outline-none focus:ring-2 focus:ring-red-400/30 transition-shadow">
                     </div>
                     
                     <div class="flex gap-4">
@@ -139,24 +142,24 @@
                             <label class="block text-[13px] font-bold text-slate-500 uppercase tracking-widest mb-2">Total Harga</label>
                             <div class="relative">
                                 <span class="absolute left-4 top-3.5 text-slate-400 font-bold">Rp</span>
-                                <input type="number" name="amount" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 font-bold text-slate-800 outline-none focus:ring-2 focus:ring-red-400/30 transition-shadow">
+                                <input type="number" name="amount" x-model="formData.amount" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 font-bold text-slate-800 outline-none focus:ring-2 focus:ring-red-400/30 transition-shadow">
                             </div>
                         </div>
                         <div class="w-2/5">
                             <label class="block text-[13px] font-bold text-slate-500 uppercase tracking-widest mb-2">Tanggal</label>
-                            <input type="date" name="date" value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-700">
+                            <input type="date" name="date" x-model="formData.date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-700">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-[13px] font-bold text-slate-500 uppercase tracking-widest mb-2">Catatan Tambahan (Opsi)</label>
-                        <textarea name="note" rows="2" placeholder="Detail pengeluaran..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-700 outline-none focus:ring-2 focus:ring-red-400/30 transition-shadow"></textarea>
+                        <textarea name="note" x-model="formData.note" rows="2" placeholder="Detail pengeluaran..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-700 outline-none focus:ring-2 focus:ring-red-400/30 transition-shadow"></textarea>
                     </div>
                 </div>
 
                 <div class="mt-8 flex gap-3">
                     <button type="button" @click="openModal = false" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3.5 rounded-xl transition-colors">Batal</button>
-                    <button type="submit" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_15px_rgba(239,68,68,0.3)] transition-transform hover:-translate-y-0.5">Potong Kas</button>
+                    <button type="submit" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_15px_rgba(239,68,68,0.3)] transition-transform hover:-translate-y-0.5" x-text="isEdit ? 'Simpan Perubahan' : 'Potong Kas'"></button>
                 </div>
             </form>
         </div>
@@ -200,8 +203,27 @@
 function expenseManager() {
     return {
         openModal: false,
+        isEdit: false,
+        formUrl: '{{ route('expense.store') }}',
+        formData: { name: '', amount: '', date: '{{ \Carbon\Carbon::now()->format("Y-m-d") }}', note: '' },
         showDeleteModal: false,
         deleteFormAction: '',
+        
+        openAddModal() {
+            this.isEdit = false;
+            this.formUrl = '{{ route('expense.store') }}';
+            this.formData = { name: '', amount: '', date: '{{ \Carbon\Carbon::now()->format("Y-m-d") }}', note: '' };
+            this.openModal = true;
+        },
+        openEditModal(exp) {
+            this.isEdit = true;
+            this.formUrl = `{{ url('pengeluaran') }}/${exp.id}`;
+            this.formData = { ...exp };
+            if(exp.date && exp.date.length >= 10) {
+                this.formData.date = exp.date.substring(0, 10);
+            }
+            this.openModal = true;
+        },
         confirmDelete(actionUrl) {
             this.deleteFormAction = actionUrl;
             this.showDeleteModal = true;

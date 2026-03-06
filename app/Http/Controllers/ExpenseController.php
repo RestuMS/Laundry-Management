@@ -60,6 +60,13 @@ class ExpenseController extends Controller
         return redirect()->back()->with('success', 'Pengeluaran berhasil dicatat!');
     }
 
+    public function update(StoreExpenseRequest $request, Expense $pengeluaran)
+    {
+        $pengeluaran->update($request->validated());
+
+        return redirect()->back()->with('success', 'Data pengeluaran berhasil diperbarui!');
+    }
+
     public function destroy(Expense $pengeluaran)
     {
         $pengeluaran->delete();

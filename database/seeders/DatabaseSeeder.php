@@ -41,5 +41,46 @@ class DatabaseSeeder extends Seeder
                 'role' => 'owner',
             ]
         );
+
+        // Seed Default Services
+        \App\Models\Service::firstOrCreate(
+            ['service_name' => 'Cuci Setrika (Reguler)'],
+            [
+                'description' => 'Cuci pakaian hingga bersih, wangi, dan disetrika rapi (Reguler 2-3 Hari).',
+                'price' => 7000,
+                'unit' => 'Kg',
+                'icon' => null
+            ]
+        );
+
+        \App\Models\Service::firstOrCreate(
+            ['service_name' => 'Cuci Lipat (Express)'],
+            [
+                'description' => 'Cuci dan lipat rapi tanpa disetrika. Selesai super cepat dalam 1 hari.',
+                'price' => 6000,
+                'unit' => 'Kg',
+                'icon' => null
+            ]
+        );
+
+        \App\Models\Service::firstOrCreate(
+            ['service_name' => 'Cuci Satuan (Jas/Blazer)'],
+            [
+                'description' => 'Cuci khusus bahan jas atau blazer (Dry Cleaning). Bebas kusut dan anti luntur.',
+                'price' => 25000,
+                'unit' => 'Pcs',
+                'icon' => null
+            ]
+        );
+
+        \App\Models\Service::firstOrCreate(
+            ['service_name' => 'Cuci Setrika Selimut/Bedcover'],
+            [
+                'description' => 'Mencuci selimut atau bedcover segala jenis bahan.',
+                'price' => 30000,
+                'unit' => 'Pcs',
+                'icon' => null
+            ]
+        );
     }
 }

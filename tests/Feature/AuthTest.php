@@ -19,10 +19,11 @@ class AuthTest extends TestCase
     }
 
     /** @test */
-    public function register_page_is_accessible()
+    public function register_page_is_disabled()
     {
+        // Register page disabled & redirects to login or 404
         $response = $this->get('/register');
-        $response->assertStatus(200);
+        $this->assertEquals(404, $response->getStatusCode());
     }
 
     /** @test */
@@ -124,9 +125,9 @@ class AuthTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        $response = $this->get('/logout');
+        $response = $this->post('/logout');
 
-        $response->assertRedirect('/');
+        $response->assertRedirect('/login');
         $this->assertGuest();
     }
 
@@ -146,7 +147,7 @@ class AuthTest extends TestCase
     }
 
     /** @test */
-    public function user_can_register()
+    public function user_cannot_register_publicly()
     {
         $response = $this->post('/register', [
             'name' => 'Test User',
@@ -155,7 +156,8 @@ class AuthTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect(route('login'));
-        $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
+        // Karena register disabled for public, akan mendapat 404 
+        $response->assertStatus(404);
+        $this->assertDatabaseMissing('users', ['email' => 'test@example.com']);
     }
 }

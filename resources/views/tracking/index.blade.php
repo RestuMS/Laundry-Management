@@ -382,15 +382,65 @@
 
                     <!-- Last Updated Info -->
                     <div class="mt-6 text-center" x-show="result.status_updated_at">
-                        <p class="text-[12px] text-slate-400 font-medium flex items-center justify-center gap-1.5">
+                        <p class="text-[12px] text-slate-400 font-medium flex items-center justify-center gap-1.5 mb-4">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             Terakhir diupdate: <span x-text="result.status_updated_at" class="font-semibold text-slate-500"></span>
                         </p>
+                        
+                        <!-- Complaint Button -->
+                        <button @click="complaintModalOpen = true" class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-[13px] transition-all transform hover:-translate-y-0.5 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            Ajukan Keluhan/Komplain
+                        </button>
                     </div>
                     
                 </div>
             </div>
         </template>
+
+        <!-- Complaint Modal -->
+        <div x-show="complaintModalOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click="complaintModalOpen = false" @keydown.escape.window="complaintModalOpen = false">
+            <div class="bg-white rounded-[24px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col transform transition-all" @click.stop>
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-red-50">
+                    <h3 class="text-lg font-bold text-red-600 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Formulir Komplain
+                    </h3>
+                    <button @click="complaintModalOpen = false" class="w-8 h-8 rounded-full bg-white text-slate-400 hover:text-slate-600 flex items-center justify-center shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <p class="text-[13px] text-slate-500 mb-4 font-medium">Mohon beritahu kami apa yang salah dengan pesanan Anda. Tim kami akan meninjau keluhan ini dan memberikan solusi kompensasi.</p>
+                    
+                    <div class="mb-4">
+                        <label class="block text-[12px] font-bold text-slate-700 mb-2 uppercase tracking-wide">Nomor Order</label>
+                        <input type="text" x-model="result.order_code" readonly class="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-600 outline-none">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-[12px] font-bold text-slate-700 mb-2 uppercase tracking-wide">Deskripsi Keluhan</label>
+                        <textarea x-model="complaintForm.description" rows="4" placeholder="Cth: Ada baju yang luntur, pakaian kurang bersih, setrikaan kurang rapi, dll..." class="w-full px-4 py-3 bg-white border border-slate-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10 rounded-xl font-medium text-[14px] outline-none transition-all resize-none"></textarea>
+                    </div>
+
+                    <div x-show="complaintForm.successMsg" class="mb-4 p-3 bg-green-50 text-green-600 rounded-xl text-[13px] font-bold flex items-center gap-2 border border-green-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                        <span x-text="complaintForm.successMsg"></span>
+                    </div>
+
+                    <div x-show="complaintForm.errorMsg" class="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-[13px] font-bold flex items-center gap-2 border border-red-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span x-text="complaintForm.errorMsg"></span>
+                    </div>
+
+                    <button @click="submitComplaint" :disabled="complaintForm.isSubmitting || !complaintForm.description" class="w-full py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_15px_rgba(239,68,68,0.4)] flex items-center justify-center gap-2">
+                        <svg x-show="complaintForm.isSubmitting" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span x-text="complaintForm.isSubmitting ? 'Mengirim...' : 'Kirim Keluhan'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Photo Lightbox -->
         <div x-show="lightboxOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click="lightboxOpen = false" @keydown.escape.window="lightboxOpen = false">
@@ -460,6 +510,13 @@
                 result: null,
                 lightboxOpen: false,
                 lightboxUrl: '',
+                complaintModalOpen: false,
+                complaintForm: {
+                    description: '',
+                    isSubmitting: false,
+                    successMsg: '',
+                    errorMsg: ''
+                },
                 
                 statuses: [
                     'Diterima', 'Dicuci', 'Dikeringkan', 'Disetrika',
@@ -507,6 +564,48 @@
                             this.errorMsg = error.message;
                             this.isLoading = false;
                         }, 500);
+                    }
+                },
+
+                async submitComplaint() {
+                    if (!this.complaintForm.description || !this.result?.order_code) return;
+                    
+                    this.complaintForm.isSubmitting = true;
+                    this.complaintForm.successMsg = '';
+                    this.complaintForm.errorMsg = '';
+
+                    try {
+                        const response = await fetch('/api/complaint', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                            },
+                            body: JSON.stringify({
+                                order_code: this.result.order_code,
+                                description: this.complaintForm.description
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.message || 'Terjadi kesalahan saat mengirim keluhan.');
+                        }
+
+                        this.complaintForm.successMsg = data.message;
+                        this.complaintForm.description = '';
+                        setTimeout(() => {
+                            this.complaintModalOpen = false;
+                            this.complaintForm.successMsg = '';
+                        }, 3000);
+
+                    } catch (error) {
+                        this.complaintForm.errorMsg = error.message;
+                    } finally {
+                        this.complaintForm.isSubmitting = false;
                     }
                 },
                 

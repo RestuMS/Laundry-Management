@@ -38,6 +38,28 @@ class Order extends Model
     ];
 
     /**
+     * Delete / Restore Relational Data automatically when order is soft-deleted
+     */
+    protected static function booted()
+    {
+        static::deleted(function ($order) {
+            $order->items()->delete();
+            $order->photos()->delete();
+            $order->payments()->delete();
+            $order->notificationLogs()->delete();
+            $order->complaints()->delete();
+        });
+
+        static::restored(function ($order) {
+            $order->items()->withTrashed()->restore();
+            $order->photos()->withTrashed()->restore();
+            $order->payments()->withTrashed()->restore();
+            $order->notificationLogs()->withTrashed()->restore();
+            $order->complaints()->withTrashed()->restore();
+        });
+    }
+
+    /**
      * All possible statuses in order
      */
     public const STATUSES = [
@@ -87,6 +109,11 @@ class Order extends Model
     public function photos()
     {
         return $this->hasMany(OrderPhoto::class);
+    }
+
+    public function complaints()
+    {
+        return $this->hasMany(Complaint::class);
     }
 
     /**

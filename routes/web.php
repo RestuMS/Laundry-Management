@@ -23,6 +23,8 @@ Route::post('/order-online', [LandingController::class, 'submitOrder'])->name('o
 // Resi Tracking Public API
 Route::get('/track', [\App\Http\Controllers\TrackingController::class, 'index'])->name('tracking.index');
 Route::get('/api/track', [\App\Http\Controllers\TrackingController::class, 'search'])->name('tracking.search')->middleware('throttle:60,1');
+// Public Complaint Submit
+Route::post('/api/complaint', [\App\Http\Controllers\ComplaintController::class, 'store'])->name('complaint.store')->middleware('throttle:5,1');
 
 
 Route::middleware('guest')->group(function () {
@@ -70,10 +72,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/laporan/export/excel', [\App\Http\Controllers\ReportController::class, 'exportExcel'])->name('laporan.export.excel');
         
         // Expenses (Pengeluaran)
-        Route::resource('pengeluaran', \App\Http\Controllers\ExpenseController::class)->only(['index', 'store', 'destroy'])->names('expense');
+        Route::resource('pengeluaran', \App\Http\Controllers\ExpenseController::class)->only(['index', 'store', 'update', 'destroy'])->names('expense');
         
         // Inventory (Bahan Baku)
-        Route::resource('inventaris', \App\Http\Controllers\InventoryController::class)->only(['index', 'store', 'update', 'destroy'])->names('inventory');
+        Route::resource('inventaris', \App\Http\Controllers\InventoryController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['inventaris' => 'inventory'])->names('inventory');
+        
+        // Komplain
+        Route::patch('/komplain/{complaint}/status', [\App\Http\Controllers\ComplaintController::class, 'updateStatus'])->name('complaints.update_status');
+        Route::resource('komplain', \App\Http\Controllers\ComplaintController::class)->only(['index', 'destroy'])->names('complaints');
     });
 
     // Admin & Kasir Shared

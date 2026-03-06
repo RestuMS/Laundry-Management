@@ -124,10 +124,20 @@ class OrderController extends Controller
     {
         $validated = $request->validated();
 
-        // Observer will auto-detect status change and send WA + record history
+        // 1. Mengembalikan stok inventory dari order item lama (sebelum dihapus)
+        foreach ($order->items as $oldItem) {
+            $inventories = Inventory::where('usage_per_kg', '>', 0)->get();
+            foreach ($inventories as $inv) {
+                $inv->stock = $inv->stock + ($inv->usage_per_kg * $oldItem->qty);
+                $inv->save();
+            }
+        }
+
         $order->update(collect($validated)->except('items')->toArray());
         
         $order->items()->delete();
+        
+        // 2. Memotong stok inventory sesuai order item baru sekaligus menyimpan item baru
         foreach ($validated['items'] as $item) {
             $order->items()->create([
                 'service_name' => $item['service_name'],
@@ -136,6 +146,14 @@ class OrderController extends Controller
                 'price' => $item['price'],
                 'subtotal' => $item['subtotal'],
             ]);
+
+            // Deduct inventory dynamically based on qty baru
+            $inventories = Inventory::where('usage_per_kg', '>', 0)->get();
+            foreach ($inventories as $inv) {
+                // Minimum stock is 0 (tidak minus)
+                $inv->stock = max(0, $inv->stock - ($inv->usage_per_kg * $item['qty']));
+                $inv->save();
+            }
         }
 
         $statusChanged = $order->wasChanged('status');

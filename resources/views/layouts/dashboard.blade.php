@@ -126,6 +126,7 @@
                 ['name' => 'Order', 'url' => route('order.index'), 'icon' => 'ph-receipt', 'active' => request()->routeIs('order.*')],
                 ['name' => 'Layanan', 'url' => route('layanan.index'), 'icon' => 'ph-washing-machine', 'active' => request()->routeIs('layanan.*')],
                 ['name' => 'Pelanggan', 'url' => route('pelanggan.index'), 'icon' => 'ph-users', 'active' => request()->routeIs('pelanggan.*')],
+                ['name' => 'Komplain', 'url' => route('complaints.index'), 'icon' => 'ph-warning-octagon', 'active' => request()->routeIs('complaints.*')],
                 ['name' => 'Laporan', 'url' => route('laporan.index'), 'icon' => 'ph-chart-line-up', 'active' => request()->routeIs('laporan.*')],
                 ['name' => 'Keuangan', 'url' => route('expense.index'), 'icon' => 'ph-wallet', 'active' => request()->routeIs('expense.*')],
                 ['name' => 'Inventaris', 'url' => route('inventory.index'), 'icon' => 'ph-package', 'active' => request()->routeIs('inventory.*')],
@@ -142,6 +143,7 @@
             'owner' => [
                 ['name' => 'Home', 'url' => route('owner'), 'icon' => 'ph-house', 'active' => request()->routeIs('owner')],
                 ['name' => 'Laporan', 'url' => route('laporan.index'), 'icon' => 'ph-chart-pie', 'active' => request()->routeIs('laporan.*')],
+                ['name' => 'Komplain', 'url' => route('complaints.index'), 'icon' => 'ph-warning-octagon', 'active' => request()->routeIs('complaints.*')],
                 ['name' => 'Pengeluaran', 'url' => route('expense.index'), 'icon' => 'ph-wallet', 'active' => request()->routeIs('expense.*')],
                 ['name' => 'Inventaris', 'url' => route('inventory.index'), 'icon' => 'ph-package', 'active' => request()->routeIs('inventory.*')],
             ]
