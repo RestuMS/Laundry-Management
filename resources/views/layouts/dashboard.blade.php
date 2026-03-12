@@ -126,6 +126,7 @@
                 ['name' => 'Order', 'url' => route('order.index'), 'icon' => 'ph-receipt', 'active' => request()->routeIs('order.*')],
                 ['name' => 'Layanan', 'url' => route('layanan.index'), 'icon' => 'ph-washing-machine', 'active' => request()->routeIs('layanan.*')],
                 ['name' => 'Pelanggan', 'url' => route('pelanggan.index'), 'icon' => 'ph-users', 'active' => request()->routeIs('pelanggan.*')],
+                ['name' => 'Antrian', 'url' => route('booking-slots.index'), 'icon' => 'ph-calendar-check', 'active' => request()->routeIs('booking-slots.*')],
                 ['name' => 'Komplain', 'url' => route('complaints.index'), 'icon' => 'ph-warning-octagon', 'active' => request()->routeIs('complaints.*')],
                 ['name' => 'Laporan', 'url' => route('laporan.index'), 'icon' => 'ph-chart-line-up', 'active' => request()->routeIs('laporan.*')],
                 ['name' => 'Keuangan', 'url' => route('expense.index'), 'icon' => 'ph-wallet', 'active' => request()->routeIs('expense.*')],
@@ -170,9 +171,7 @@
     <!-- Mobile Top Header (Sticky) -->
     <header class="fixed top-0 inset-x-0 h-[65px] z-40 glass-header px-5 flex items-center justify-between lg:hidden transition-all duration-300">
         <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-primary relative">
-                <i class="ph-fill ph-drop text-xl"></i>
-            </div>
+            <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-12 h-12 rounded-xl object-cover shadow-sm">
             <div>
                 <h1 class="text-[17px] font-bold text-slate-800 leading-tight tracking-tight">Laundry<span class="text-primary">Pro</span></h1>
             </div>
@@ -239,9 +238,7 @@
         <!-- Desktop Sidebar (Hidden on Mobile) -->
         <aside class="hidden lg:flex flex-col w-[280px] fixed inset-y-0 left-0 bg-white border-r border-slate-100 z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
             <div class="h-[80px] flex md:flex-col lg:flex-row items-center px-6 gap-3 pt-6 mb-4">
-                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-primary relative">
-                    <i class="ph-fill ph-drop text-2xl"></i>
-                </div>
+                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-14 h-14 rounded-xl object-cover shadow-sm">
                 <h1 class="text-[20px] font-bold text-slate-800 tracking-tight">Laundry<span class="text-primary">Pro</span></h1>
             </div>
 

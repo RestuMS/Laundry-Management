@@ -9,7 +9,8 @@ class OrderTrackingRepository implements OrderTrackingRepositoryInterface
 {
     public function findByCodeOrPhone(string $keyword)
     {
-        return Order::where('order_code', $keyword)
+        return Order::with(['items', 'photos', 'payments', 'complaints', 'rating'])
+                    ->where('order_code', $keyword)
                     ->orWhere('customer_phone', $keyword)
                     ->first();
     }

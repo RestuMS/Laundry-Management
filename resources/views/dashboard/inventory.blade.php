@@ -103,7 +103,10 @@
                         </td>
                         <td class="py-4 px-6 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                <button type="button" @click="openEditModal({{ $inv }})" class="w-9 h-9 rounded-xl bg-blue-50 text-blue-500 border border-blue-100 hover:bg-blue-500 hover:text-white transition-all flex items-center justify-center">
+                                <button type="button" @click="openAdjustModal({{ $inv }})" class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-500 border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center relative group" title="Penyesuaian Stok Cepat">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
+                                </button>
+                                <button type="button" @click="openEditModal({{ $inv }})" class="w-9 h-9 rounded-xl bg-blue-50 text-blue-500 border border-blue-100 hover:bg-blue-500 hover:text-white transition-all flex items-center justify-center" title="Edit Data Bahan">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                 </button>
                                 <form action="{{ route('inventory.destroy', $inv->id) }}" method="POST" onsubmit="return confirm('Hapus bahan baku ini?');" class="inline">
@@ -179,15 +182,62 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal Adjust Stock -->
+    <div x-show="adjustOpen" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden w-full h-full" style="display:none;">
+        <div x-show="adjustOpen" x-transition.opacity class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+        <div x-show="adjustOpen" @click.away="adjustOpen = false" x-transition.scale.95 class="relative bg-white w-full max-w-md mx-4 rounded-[24px] shadow-2xl p-6 z-10 border border-white">
+            <h3 class="text-2xl font-bold text-slate-800 mb-2 tracking-tight">Penyesuaian Stok</h3>
+            <p class="text-[13px] text-slate-500 mb-6 flex gap-1 font-medium">Bahan: <span class="font-bold text-slate-800" x-text="adjustItem.name"></span> (Sisa: <span class="font-bold text-slate-800" x-text="adjustItem.stock + ' ' + adjustItem.unit"></span>)</p>
+            
+            <form :action="'{{ url('inventaris') }}/' + adjustItem.id + '/adjust'" method="POST">
+                @csrf
+                <div class="space-y-4">
+                    <div class="flex gap-4">
+                        <label class="flex-1 border border-slate-200 rounded-xl p-3 cursor-pointer hover:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-200 transition-all flex items-center gap-3">
+                            <input type="radio" name="type" value="in" x-model="adjustType" class="w-4 h-4 text-emerald-500 focus:ring-emerald-500 border-slate-300">
+                            <div>
+                                <span class="block text-[13px] font-bold text-slate-700">Restock (+ Masuk)</span>
+                            </div>
+                        </label>
+                        <label class="flex-1 border border-slate-200 rounded-xl p-3 cursor-pointer hover:border-red-400 focus-within:ring-2 focus-within:ring-red-200 transition-all flex items-center gap-3">
+                            <input type="radio" name="type" value="out" x-model="adjustType" class="w-4 h-4 text-red-500 focus:ring-red-500 border-slate-300">
+                            <div>
+                                <span class="block text-[13px] font-bold text-slate-700">Koreksi (- Keluar)</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label class="block text-[13px] font-bold text-slate-500 uppercase tracking-widest mb-2">Jumlah (<span x-text="adjustItem.unit"></span>)</label>
+                        <input type="number" step="0.01" min="0.01" name="qty" required placeholder="Contoh: 1000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-700 focus:ring-2 focus:ring-[#4F8EF7]/40 outline-none transition-all">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[13px] font-bold text-slate-500 uppercase tracking-widest mb-2">Keterangan / Catatan</label>
+                        <input type="text" name="notes" placeholder="Contoh: Beli dari supplier A, atau Ada yang tumpah" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium text-slate-700 focus:ring-2 focus:ring-[#4F8EF7]/40 outline-none transition-all">
+                    </div>
+                </div>
+
+                <div class="mt-8 flex gap-3">
+                    <button type="button" @click="adjustOpen = false" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3.5 rounded-xl transition-colors">Batal</button>
+                    <button type="submit" :class="adjustType === 'in' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_4px_20px_rgba(16,185,129,0.3)]' : 'bg-red-500 hover:bg-red-600 shadow-[0_4px_20px_rgba(239,68,68,0.3)]'" class="flex-1 text-white font-bold py-3.5 rounded-xl transition-all hover:-translate-y-0.5" x-text="adjustType === 'in' ? 'Simpan Restock' : 'Simpan Koreksi'"></button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
 function inventoryManager() {
     return {
         modalOpen: false,
+        adjustOpen: false,
         isEdit: false,
         formUrl: '{{ route('inventory.store') }}',
         formData: { name: '', stock: 0, unit: 'ml', usage_per_kg: 0, minimum_stock: 0 },
+        adjustItem: { id: '', name: '', stock: 0, unit: '' },
+        adjustType: 'in',
         
         openCreateModal() {
             this.isEdit = false;
@@ -200,6 +250,11 @@ function inventoryManager() {
             this.formUrl = '{{ url('inventaris') }}/' + item.id;
             this.formData = { ...item };
             this.modalOpen = true;
+        },
+        openAdjustModal(item) {
+            this.adjustItem = { ...item };
+            this.adjustType = 'in';
+            this.adjustOpen = true;
         }
     }
 }

@@ -146,6 +146,13 @@
                 display: none !important;
             }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000; }
+            /* Ensure QR SVG renders correctly when printed */
+            .qr-container object,
+            .qr-container img {
+                display: block !important;
+                width: 90px !important;
+                height: 90px !important;
+            }
         }
     </style>
 </head>
@@ -193,10 +200,15 @@
     <div class="receipt" id="receipt">
         
         <!-- Store Header (Dynamic from Settings) -->
-        <div class="text-center font-bold uppercase mb-2" style="font-size: 14px;">
-            {{ strtoupper($storeName) }}
+        <div class="text-center" style="margin-bottom: 6px;">
+            <img src="{{ asset('images/logo.png') }}" 
+                 alt="Logo" 
+                 style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; filter: grayscale(100%) contrast(180%); margin-bottom: 6px; display: inline-block;">
+            <div class="font-bold uppercase" style="font-size: 15px; margin-top: 2px;">
+                {{ strtoupper($storeName) }}
+            </div>
         </div>
-        <div class="text-center" style="font-size: 9px;">
+        <div class="text-center" style="font-size: 9px; margin-bottom: 6px; line-height: 1.4;">
             {{ $storeAddress }}<br>
             Telp: {{ $storePhone }}
         </div>
@@ -320,17 +332,21 @@
         </div>
         @endif
 
-        <!-- QR Code Barcode untuk Scanner Kasir -->
-        <div class="mt-4 mb-2" style="display: flex; justify-content: center;">
-            <div style="border: 1px dashed #ccc; border-radius: 4px; padding: 2px;">
-                <img src="{{ route('qrcode.generate', ['data' => $order->order_code]) }}" 
-                     alt="QR Code Order" 
-                     style="display: block; width: 90px; height: 90px;"
-                     onload="window.qrLoaded = true; checkPrint();" />
+        <!-- QR Code untuk Scanner Kasir -->
+        <div class="mt-4 mb-2 qr-container" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+            <div style="border: 1px dashed #999; border-radius: 4px; padding: 4px; background:#fff; display:inline-block;">
+                <object
+                    data="{{ route('qrcode.generate', ['data' => $order->order_code]) }}"
+                    type="image/svg+xml"
+                    width="90"
+                    height="90"
+                    style="display: block; width: 90px; height: 90px;"
+                >
+                    <!-- Fallback: teks order code jika SVG gagal -->
+                    <div style="width:90px;height:90px;display:flex;align-items:center;justify-content:center;font-size:8px;text-align:center;border:1px solid #000;font-weight:bold;">{{ $order->order_code }}</div>
+                </object>
             </div>
-        </div>
-        <div class="text-center font-bold" style="font-size: 11px; margin-bottom: 6px;">
-            {{ $order->order_code }}
+            <div class="text-center font-bold" style="font-size: 11px; letter-spacing: 1px;">{{ $order->order_code }}</div>
         </div>
 
         <!-- T&C -->
@@ -363,18 +379,43 @@
             }
         });
 
-        // Wait for QR image loading
-        window.qrLoaded = false;
-        function checkPrint() {
-            if (window.qrLoaded) {
+        // Ensure all images (Logo & QR Code) are loaded before auto-printing
+        window.onload = function() {
+            const images = document.querySelectorAll('img');
+            let loadedCount = 0;
+            const totalCount = images.length;
+            
+            if (totalCount === 0) {
                 setTimeout(() => window.print(), 300);
+            } else {
+                images.forEach(img => {
+                    if (img.complete) {
+                        loadedCount++;
+                        checkAllImagesLoaded();
+                    } else {
+                        img.addEventListener('load', () => {
+                            loadedCount++;
+                            checkAllImagesLoaded();
+                        });
+                        img.addEventListener('error', () => {
+                            loadedCount++; // proceed even if one fails
+                            checkAllImagesLoaded();
+                        });
+                    }
+                });
             }
-        }
-        
-        // Fallback auto show dialog
-        setTimeout(() => {
-            if (!window.qrLoaded) window.print();
-        }, 1500);
+            
+            function checkAllImagesLoaded() {
+                if (loadedCount >= totalCount) {
+                    setTimeout(() => window.print(), 300);
+                }
+            }
+            
+            // Fallback timeout in case loading takes too long
+            setTimeout(() => {
+                if(loadedCount < totalCount) window.print();
+            }, 2500);
+        };
     </script>
 </body>
 </html>

@@ -25,7 +25,16 @@ Route::get('/track', [\App\Http\Controllers\TrackingController::class, 'index'])
 Route::get('/api/track', [\App\Http\Controllers\TrackingController::class, 'search'])->name('tracking.search')->middleware('throttle:60,1');
 // Public Complaint Submit
 Route::post('/api/complaint', [\App\Http\Controllers\ComplaintController::class, 'store'])->name('complaint.store')->middleware('throttle:5,1');
+// Public Rating Submit
+Route::post('/api/rating', [\App\Http\Controllers\RatingController::class, 'store'])->name('rating.store')->middleware('throttle:3,1');
 
+// Payment Integration (Midtrans)
+Route::post('/api/order/{order:order_code}/pay', [\App\Http\Controllers\MidtransController::class, 'createTransaction'])->name('payment.pay');
+// Midtrans Callback/Webhook
+Route::post('/api/midtrans/callback', [\App\Http\Controllers\MidtransController::class, 'callback'])->name('payment.callback');
+
+// Public: Cek ketersediaan booking slot (for landing page)
+Route::get('/api/booking-slots', [\App\Http\Controllers\BookingSlotController::class, 'available'])->name('booking-slots.available')->middleware('throttle:60,1');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -63,7 +72,14 @@ Route::middleware('auth')->group(function () {
         
         // Activity Log (Audit Trail)
         Route::get('/activity-log', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-log.index');
+
+        // Booking Slot Management (Antrian)
+        Route::get('/antrian', [\App\Http\Controllers\BookingSlotController::class, 'index'])->name('booking-slots.index');
+        Route::patch('/antrian/{bookingSlot}', [\App\Http\Controllers\BookingSlotController::class, 'update'])->name('booking-slots.update');
+        Route::post('/antrian/bulk-toggle', [\App\Http\Controllers\BookingSlotController::class, 'bulkToggle'])->name('booking-slots.bulk-toggle');
+        Route::post('/antrian/default-capacity', [\App\Http\Controllers\BookingSlotController::class, 'updateDefaultCapacity'])->name('booking-slots.default-capacity');
     });
+
 
     // Admin & Owner Shared
     Route::middleware('role:admin,owner')->group(function () {
@@ -75,6 +91,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('pengeluaran', \App\Http\Controllers\ExpenseController::class)->only(['index', 'store', 'update', 'destroy'])->names('expense');
         
         // Inventory (Bahan Baku)
+        Route::post('inventaris/{inventory}/adjust', [\App\Http\Controllers\InventoryController::class, 'adjustStock'])->name('inventory.adjust');
         Route::resource('inventaris', \App\Http\Controllers\InventoryController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['inventaris' => 'inventory'])->names('inventory');
         
         // Komplain

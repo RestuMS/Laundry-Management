@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lacak Status Laundry - {{ $globalSettings['store_name'] ?? 'LaundryPro' }}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +14,8 @@
     <!-- Alpine JS & Tailwind -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <script>
@@ -92,6 +95,11 @@
             );
         }
     </style>
+
+    <!-- Midtrans Snap JS -->
+    <script type="text/javascript" 
+            src="{{ config('services.midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" 
+            data-client-key="{{ config('services.midtrans.client_key') }}"></script>
 </head>
 <body class="antialiased min-h-screen relative overflow-x-hidden font-sans text-slate-800" x-data="trackingApp()">
     
@@ -104,18 +112,10 @@
 
     <div class="relative z-10 w-full min-h-screen py-10 px-4 flex flex-col items-center">
         
-        <!-- Login Quick Action -->
-        <div class="absolute top-4 right-4 md:top-8 md:right-8 z-50">
-            <a href="{{ route('login') }}" class="glass-panel px-4 md:px-5 py-2.5 rounded-2xl text-[13px] md:text-[14px] font-bold text-primary hover:bg-white/90 hover:shadow-xl transition-all flex items-center gap-2 group border border-blue-100">
-                <svg class="w-4 h-4 text-primary group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                Sign In / Kelola
-            </a>
-        </div>
-        
         <!-- Header -->
         <div class="text-center mb-10 mt-6 max-w-2xl mx-auto w-full" x-show="!result" x-transition.duration.700ms>
             <div class="inline-flex items-center justify-center p-4 bg-white/50 rounded-2xl shadow-sm mb-6 border border-white backdrop-blur-md">
-                <img src="https://ui-avatars.com/api/?name=Washup+Laundry&background=2563EB&color=fff&rounded=true&bold=true&size=128" alt="Logo" class="w-12 h-12 object-contain mr-3 rounded-full shadow-md shadow-blue-500/20">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-12 h-12 object-cover mr-3 rounded-xl shadow-md shadow-blue-500/20">
                 <h1 class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">{{ $globalSettings['store_name'] ?? 'LaundryPro' }}</h1>
             </div>
             <h2 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight leading-tight">Lacak Status Pakaian Anda Secara Real-time</h2>
@@ -315,8 +315,12 @@
                                                 <span class="text-slate-300">• oleh <span x-text="step.changed_by" class="text-slate-400"></span></span>
                                             </template>
                                         </p>
-                                        <p x-show="!step.timestamp" class="text-[12px] font-medium text-slate-300 mt-1 italic">
+                                        <p x-show="!step.timestamp && !step.completed" class="text-[12px] font-medium text-slate-300 mt-1 italic">
                                             Menunggu proses...
+                                        </p>
+                                        <p x-show="!step.timestamp && step.completed" class="text-[12px] font-medium text-slate-400 mt-1 italic flex items-center gap-1.5" title="Status ini dilewati (diselesaikan otomatis)">
+                                            <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                            Otomatis selesai
                                         </p>
                                     </div>
                                 </div>
@@ -349,6 +353,21 @@
                                 <span class="text-[11px] font-black inline-block px-3 py-1 rounded-[8px] text-[#EF4444] bg-[#FEE2E2]"
                                       x-show="result.payment_status === 'Belum Bayar' || result.payment_status === 'Belum Lunas'">Belum Lunas</span>
                             </div>
+                            
+                            <!-- Midtrans Payment Button -->
+                            <template x-if="result.remaining_balance > 0">
+                                <div class="mt-4 pt-3 border-t border-blue-200 border-dashed">
+                                    <p class="text-[11px] font-bold text-slate-500 mb-2 flex justify-between items-center">
+                                        Sisa Bayar: 
+                                        <span class="text-blue-700 text-[13px] font-black">Rp <span x-text="formatRupiah(result.remaining_balance)"></span></span>
+                                    </p>
+                                    <button @click="payWithMidtrans" :disabled="isPaying" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-[12px] shadow-sm shadow-blue-500/30 transition-all flex justify-center items-center gap-2 transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed">
+                                        <svg x-show="isPaying" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        <svg x-show="!isPaying" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                                        <span x-text="isPaying ? 'Harap Tunggu...' : 'Bayar Sekarang'"></span>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -380,18 +399,196 @@
                         </div>
                     </template>
 
+                    <!-- Rating Section: Only when Diambil -->
+                    <template x-if="result.status === 'Diambil'">
+                        <div class="mt-8 border-t border-slate-100 pt-8">
+                            <!-- Already Rated -->
+                            <template x-if="result.has_rated">
+                                <div class="text-center bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-100">
+                                    <div class="text-4xl mb-2">⭐</div>
+                                    <p class="text-[15px] font-bold text-amber-700 mb-1">Terima kasih atas penilaian Anda!</p>
+                                    <div class="flex items-center justify-center gap-1 mb-2">
+                                        <template x-for="i in 5" :key="i">
+                                            <svg class="w-6 h-6 transition-colors" :class="i <= result.rating.stars ? 'text-amber-400' : 'text-slate-200'" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                        </template>
+                                    </div>
+                                    <p x-show="result.rating.comment" class="text-[13px] text-amber-600 font-medium italic" x-text="'\"' + result.rating.comment + '\"'"></p>
+                                </div>
+                            </template>
+
+                            <!-- Rating Form -->
+                            <template x-if="!result.has_rated">
+                                <div x-data="{
+                                    stars: 0,
+                                    hovered: 0,
+                                    comment: '',
+                                    isSubmitting: false,
+                                    successMsg: '',
+                                    errorMsg: '',
+                                    async submitRating() {
+                                        if (!this.stars) return;
+                                        this.isSubmitting = true;
+                                        this.errorMsg = '';
+                                        try {
+                                            const res = await fetch('/api/rating', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'Accept': 'application/json',
+                                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || ''
+                                                },
+                                                body: JSON.stringify({ order_code: result.order_code, rating: this.stars, comment: this.comment })
+                                            });
+                                            const data = await res.json();
+                                            if (!res.ok) throw new Error(data.message || 'Gagal mengirim rating.');
+                                            this.successMsg = data.message;
+                                            result.has_rated = true;
+                                            result.rating = { stars: this.stars, comment: this.comment };
+                                        } catch(e) {
+                                            this.errorMsg = e.message;
+                                        } finally {
+                                            this.isSubmitting = false;
+                                        }
+                                    }
+                                }">
+                                    <div class="text-center mb-5">
+                                        <div class="text-3xl mb-2">🎉</div>
+                                        <h4 class="text-[16px] font-bold text-slate-800 mb-1">Cucian sudah diambil!</h4>
+                                        <p class="text-[13px] text-slate-500 font-medium">Bagaimana pengalaman Anda menggunakan layanan kami?</p>
+                                    </div>
+
+                                    <!-- Stars -->
+                                    <div class="flex items-center justify-center gap-2 mb-4">
+                                        <template x-for="i in 5" :key="i">
+                                            <button
+                                                @click="stars = i"
+                                                @mouseenter="hovered = i"
+                                                @mouseleave="hovered = 0"
+                                                class="transition-transform hover:scale-110 focus:outline-none"
+                                            >
+                                                <svg class="w-10 h-10 transition-colors duration-150"
+                                                     :class="i <= (hovered || stars) ? 'text-amber-400' : 'text-slate-200'"
+                                                     fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                                </svg>
+                                            </button>
+                                        </template>
+                                    </div>
+
+                                    <!-- Star Label -->
+                                    <p class="text-center text-[13px] font-bold mb-4 h-5"
+                                       :class="stars >= 4 ? 'text-emerald-500' : (stars >= 3 ? 'text-amber-500' : (stars > 0 ? 'text-red-400' : 'text-slate-300'))">
+                                        <span x-show="stars === 1">😞 Sangat Buruk</span>
+                                        <span x-show="stars === 2">😐 Kurang Memuaskan</span>
+                                        <span x-show="stars === 3">🙂 Cukup Baik</span>
+                                        <span x-show="stars === 4">😊 Memuaskan</span>
+                                        <span x-show="stars === 5">🤩 Luar Biasa!</span>
+                                        <span x-show="stars === 0">Pilih bintang penilaian</span>
+                                    </p>
+
+                                    <!-- Comment -->
+                                    <textarea
+                                        x-model="comment"
+                                        rows="3"
+                                        maxlength="300"
+                                        placeholder="Tulis komentar (opsional)... misal: ramah, pelayanan cepat, baju harum"
+                                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 rounded-xl font-medium text-[13px] outline-none transition-all resize-none mb-3"
+                                    ></textarea>
+
+                                    <!-- Alerts -->
+                                    <div x-show="errorMsg" class="mb-3 p-3 bg-red-50 text-red-600 rounded-xl text-[13px] font-bold border border-red-200 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span x-text="errorMsg"></span>
+                                    </div>
+
+                                    <!-- Submit -->
+                                    <button
+                                        @click="submitRating"
+                                        :disabled="!stars || isSubmitting"
+                                        class="w-full py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white rounded-xl font-bold text-[14px] shadow-[0_4px_15px_rgba(251,191,36,0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        <svg x-show="isSubmitting" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                        <span x-show="!isSubmitting">⭐ Kirim Penilaian</span>
+                                        <span x-show="isSubmitting">Mengirim...</span>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
                     <!-- Last Updated Info -->
                     <div class="mt-6 text-center" x-show="result.status_updated_at">
                         <p class="text-[12px] text-slate-400 font-medium flex items-center justify-center gap-1.5 mb-4">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             Terakhir diupdate: <span x-text="result.status_updated_at" class="font-semibold text-slate-500"></span>
                         </p>
-                        
+
                         <!-- Complaint Button -->
                         <button @click="complaintModalOpen = true" class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-[13px] transition-all transform hover:-translate-y-0.5 shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             Ajukan Keluhan/Komplain
                         </button>
+
+                        <!-- Status Keluhan Section -->
+                        <template x-if="result.complaints && result.complaints.length > 0">
+                            <div class="mt-6 w-full text-left">
+                                <h4 class="text-[14px] font-bold text-slate-700 mb-3 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                    Riwayat Keluhan Anda
+                                </h4>
+                                <div class="space-y-3">
+                                    <template x-for="(c, i) in result.complaints" :key="i">
+                                        <div class="bg-white rounded-2xl p-4 border shadow-sm text-left"
+                                             :class="{
+                                                'border-amber-200 bg-amber-50/30': c.status === 'Menunggu',
+                                                'border-blue-200 bg-blue-50/30': c.status === 'Direview',
+                                                'border-emerald-200 bg-emerald-50/30': c.status === 'Disetujui',
+                                                'border-red-200 bg-red-50/30': c.status === 'Ditolak',
+                                                'border-purple-200 bg-purple-50/30': c.status === 'Diganti Uang',
+                                             }">
+                                            <!-- Header baris keluhan -->
+                                            <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                                                <span class="text-[11px] text-slate-400 font-medium" x-text="'Dikirim: ' + c.created_at"></span>
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold"
+                                                      :class="{
+                                                        'bg-amber-100 text-amber-700': c.status === 'Menunggu',
+                                                        'bg-blue-100 text-blue-700': c.status === 'Direview',
+                                                        'bg-emerald-100 text-emerald-700': c.status === 'Disetujui',
+                                                        'bg-red-100 text-red-700': c.status === 'Ditolak',
+                                                        'bg-purple-100 text-purple-700': c.status === 'Diganti Uang',
+                                                      }">
+                                                    <!-- Icon status -->
+                                                    <template x-if="c.status === 'Menunggu'"><span>⏳</span></template>
+                                                    <template x-if="c.status === 'Direview'"><span>🔍</span></template>
+                                                    <template x-if="c.status === 'Disetujui'"><span>✅</span></template>
+                                                    <template x-if="c.status === 'Ditolak'"><span>❌</span></template>
+                                                    <template x-if="c.status === 'Diganti Uang'"><span>💰</span></template>
+                                                    <span x-text="c.status"></span>
+                                                </span>
+                                            </div>
+                                            <!-- Isi keluhan -->
+                                            <p class="text-[13px] text-slate-700 font-medium leading-relaxed mb-2" x-text="c.description"></p>
+                                            <!-- Catatan admin / solusi -->
+                                            <template x-if="c.resolution_notes">
+                                                <div class="mt-2 p-3 rounded-xl border"
+                                                     :class="{
+                                                        'bg-emerald-50 border-emerald-200': c.status === 'Disetujui' || c.status === 'Diganti Uang',
+                                                        'bg-slate-50 border-slate-200': c.status !== 'Disetujui' && c.status !== 'Diganti Uang'
+                                                     }">
+                                                    <p class="text-[11px] font-bold uppercase tracking-wider mb-1"
+                                                       :class="c.status === 'Disetujui' || c.status === 'Diganti Uang' ? 'text-emerald-600' : 'text-slate-400'">💬 Respons Admin:</p>
+                                                    <p class="text-[13px] font-medium text-slate-700" x-text="c.resolution_notes"></p>
+                                                </div>
+                                            </template>
+                                            <!-- Jika belum ada respons -->
+                                            <template x-if="!c.resolution_notes && c.status === 'Menunggu'">
+                                                <p class="text-[11px] text-slate-400 italic mt-1">⏳ Tim kami sedang memproses keluhan Anda...</p>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                     
                 </div>
@@ -506,6 +703,7 @@
             return {
                 searchQuery: '',
                 isLoading: false,
+                isPaying: false,
                 errorMsg: '',
                 result: null,
                 lightboxOpen: false,
@@ -519,7 +717,7 @@
                 },
                 
                 statuses: [
-                    'Diterima', 'Dicuci', 'Dikeringkan', 'Disetrika',
+                    'Menunggu Konfirmasi', 'Diterima', 'Dicuci', 'Dikeringkan', 'Disetrika',
                     'Quality Control', 'Selesai', 'Diambil'
                 ],
                 
@@ -609,6 +807,60 @@
                     }
                 },
                 
+                async payWithMidtrans() {
+                    if (!this.result?.order_code || this.isPaying) return;
+                    this.isPaying = true;
+
+                    try {
+                        const response = await fetch(`/api/order/${this.result.order_code}/pay`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok || !data.success) {
+                            throw new Error(data.message || 'Gagal menyiapkan pembayaran.');
+                        }
+
+                        // Trigger Midtrans Snap Popup
+                        snap.pay(data.snap_token, {
+                            onSuccess: (result) => {
+                                // Auto reload tracking data
+                                this.searchOrder();
+                            },
+                            onPending: (result) => {
+                                this.searchOrder();
+                            },
+                            onError: (result) => {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Transaksi Gagal',
+                                    text: 'Pembayaran atau koneksi gagal, silakan coba lagi.',
+                                    confirmButtonColor: '#3b82f6'
+                                });
+                            },
+                            onClose: () => {
+                                this.isPaying = false;
+                            }
+                        });
+                        
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Terjadi Kesalahan',
+                            text: error.message,
+                            confirmButtonColor: '#3b82f6'
+                        });
+                        this.isPaying = false;
+                    }
+                },
+
                 getCurrentStatusIndex() {
                     if (!this.result) return -1;
                     return this.statuses.indexOf(this.result.status);

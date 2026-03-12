@@ -80,10 +80,11 @@
     @endif
 
     <!-- Table Section -->
-    <div class="glass-container rounded-[24px] p-2 sm:p-4 overflow-hidden shadow-sm relative mb-8">
-        
-        <div class="overflow-x-auto custom-scrollbar pb-3">
-            <table class="w-full text-left whitespace-nowrap border-collapse min-w-[950px]">
+    <div class="glass-container rounded-[24px] overflow-hidden shadow-sm relative mb-8">
+
+        {{-- ===== DESKTOP TABLE (hidden on mobile) ===== --}}
+        <div class="hidden lg:block overflow-x-auto custom-scrollbar pb-3 p-2 sm:p-4">
+            <table class="w-full text-left whitespace-nowrap border-collapse min-w-[800px]">
                 <thead>
                     <tr class="text-[13px] font-bold text-[#64748B] border-b-2 border-slate-100/60 uppercase tracking-wider">
                         <th class="py-4 px-6 pl-8">ID & Nama Pelanggan</th>
@@ -93,15 +94,13 @@
                         <th class="py-4 px-6 pr-8 text-right">Aksi</th>
                     </tr>
                 </thead>
-
                 <tbody class="text-[14.5px] font-medium text-slate-600">
                     @forelse($customers as $customer)
-                    @php 
+                    @php
                         $colors = ['4F46E5', 'EC4899', 'F59E0B', '8B5CF6'];
                         $bgColor = $colors[$customer->id % count($colors)];
                     @endphp
                     <tr class="border-b border-white/50 hover:bg-white/60 hover:-translate-y-[1px] hover:shadow-[0_4px_10px_rgba(0,0,0,0.02)] transition-all group">
-                        
                         <td class="py-4 px-6 pl-8">
                             <div class="flex items-center gap-4">
                                 <img src="https://ui-avatars.com/api/?name={{ urlencode($customer->full_name) }}&background={{ $bgColor }}&color=fff&rounded=true&bold=true" class="w-11 h-11 rounded-full shadow-sm ring-2 ring-white transform transition-transform group-hover:scale-110" alt="Avatar"/>
@@ -111,49 +110,37 @@
                                 </div>
                             </div>
                         </td>
-                        
                         <td class="py-4 px-4">
                             <div class="flex items-center gap-2 text-slate-600 font-semibold">
-                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                                 {{ $customer->phone ?? '-' }}
                             </div>
                         </td>
-
                         <td class="py-4 px-4">
-                            <div class="text-slate-500 max-w-[200px] truncate">{{ $customer->address ?? '-' }}</div>
+                            <div class="text-slate-500 max-w-[180px] truncate">{{ $customer->address ?? '-' }}</div>
                         </td>
-
                         <td class="py-4 px-4 text-center">
                             @if($customer->status == 'Reguler')
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[12px] font-bold bg-slate-100 text-slate-500">
-                                <span class="w-2 h-2 rounded-full bg-slate-400"></span> Reguler
-                            </span>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[12px] font-bold bg-slate-100 text-slate-500"><span class="w-2 h-2 rounded-full bg-slate-400"></span> Reguler</span>
                             @elseif($customer->status == 'Member')
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[12px] font-bold bg-[#E5F7EA] text-[#48B868]">
-                                <span class="w-2 h-2 rounded-full bg-[#48B868] animate-pulse"></span> Member Setia
-                            </span>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[12px] font-bold bg-[#E5F7EA] text-[#48B868]"><span class="w-2 h-2 rounded-full bg-[#48B868] animate-pulse"></span> Member Setia</span>
                             @else
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[12px] font-bold bg-[#FFF2DE] text-[#F3A73D]">
-                                <span class="w-2 h-2 rounded-full bg-[#F3A73D]"></span> VIP Member
-                            </span>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-[12px] font-bold bg-[#FFF2DE] text-[#F3A73D]"><span class="w-2 h-2 rounded-full bg-[#F3A73D]"></span> VIP Member</span>
                             @endif
                         </td>
-
                         <td class="py-4 px-6 pr-8 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 <button type="button" @click="openEditModal({{ $customer->toJson() }})" class="w-9 h-9 rounded-xl bg-[#F0F5FF] text-[#5B8DEF] hover:bg-[#5B8DEF] hover:text-white border border-[#5B8DEF]/20 transition-all flex items-center justify-center shadow-sm">
                                     <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                 </button>
                                 <form action="{{ route('pelanggan.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('Hapus pelanggan ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="w-9 h-9 rounded-xl bg-red-50 text-red-400 hover:bg-red-400 hover:text-white border border-red-200 hover:border-red-400 transition-all flex items-center justify-center shadow-sm">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="w-9 h-9 rounded-xl bg-red-50 text-red-400 hover:bg-red-400 hover:text-white border border-red-200 transition-all flex items-center justify-center shadow-sm">
                                         <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </form>
                             </div>
                         </td>
-                        
                     </tr>
                     @empty
                     <tr>
@@ -166,15 +153,71 @@
                 </tbody>
             </table>
         </div>
-        
+
+        {{-- ===== MOBILE CARD LIST (visible only on mobile/tablet) ===== --}}
+        <div class="lg:hidden divide-y divide-slate-100/70">
+            @forelse($customers as $customer)
+            @php
+                $colors = ['4F46E5', 'EC4899', 'F59E0B', '8B5CF6'];
+                $bgColor = $colors[$customer->id % count($colors)];
+            @endphp
+            <div class="flex items-center gap-3 px-4 py-4 hover:bg-white/60 transition-colors">
+                {{-- Avatar --}}
+                <img src="https://ui-avatars.com/api/?name={{ urlencode($customer->full_name) }}&background={{ $bgColor }}&color=fff&rounded=true&bold=true" class="w-12 h-12 rounded-full shadow-sm ring-2 ring-white shrink-0" alt="Avatar"/>
+
+                {{-- Info --}}
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-bold text-slate-800 text-[14px] truncate">{{ $customer->full_name }}</span>
+                        @if($customer->status == 'Member')
+                            <span class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E5F7EA] text-[#48B868]"><span class="w-1.5 h-1.5 rounded-full bg-[#48B868] animate-pulse"></span>Member</span>
+                        @elseif($customer->status == 'VIP')
+                            <span class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF2DE] text-[#F3A73D]"><span class="w-1.5 h-1.5 rounded-full bg-[#F3A73D]"></span>VIP</span>
+                        @endif
+                    </div>
+                    <div class="flex items-center gap-3 mt-0.5 flex-wrap">
+                        <span class="text-[11px] font-bold text-[#5B8DEF]">CUST-{{ str_pad($customer->id, 4, '0', STR_PAD_LEFT) }}</span>
+                        @if($customer->phone)
+                        <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                            {{ $customer->phone }}
+                        </span>
+                        @endif
+                    </div>
+                    @if($customer->address)
+                    <div class="text-[11px] text-slate-400 font-medium mt-0.5 truncate">📍 {{ $customer->address }}</div>
+                    @endif
+                </div>
+
+                {{-- Actions --}}
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" @click="openEditModal({{ $customer->toJson() }})" class="w-9 h-9 rounded-xl bg-[#F0F5FF] text-[#5B8DEF] hover:bg-[#5B8DEF] hover:text-white border border-[#5B8DEF]/20 transition-all flex items-center justify-center">
+                        <svg class="w-[16px] h-[16px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    </button>
+                    <form action="{{ route('pelanggan.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('Hapus pelanggan ini?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="w-9 h-9 rounded-xl bg-red-50 text-red-400 hover:bg-red-400 hover:text-white border border-red-200 transition-all flex items-center justify-center">
+                            <svg class="w-[16px] h-[16px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            @empty
+            <div class="py-16 text-center text-slate-400">
+                <svg class="w-16 h-16 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <p class="font-bold text-slate-600">Pelanggan tidak ditemukan.</p>
+            </div>
+            @endforelse
+        </div>
+
         <!-- Pagination -->
         @if($customers->hasPages())
         <div class="px-6 py-4 border-t border-white/60">
             {{ $customers->links('pagination::tailwind') }}
         </div>
         @endif
-
     </div>
+
 
     <!-- MODAL TAMBAH/EDIT -->
     <div x-show="modalOpen" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center overflow-auto bg-slate-900/40 backdrop-blur-sm" style="display: none;">

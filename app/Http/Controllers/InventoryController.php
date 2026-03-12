@@ -31,9 +31,52 @@ class InventoryController extends Controller
 
     public function store(StoreInventoryRequest $request)
     {
-        Inventory::create($request->validated());
+        $inventory = Inventory::create($request->validated());
+
+        if ($inventory->stock > 0) {
+            \App\Models\InventoryLog::create([
+                'inventory_id' => $inventory->id,
+                'type' => 'in',
+                'qty' => $inventory->stock,
+                'notes' => 'Stok awal',
+                'user_name' => auth()->user()->name ?? 'System',
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Bahan baku berhasil ditambahkan!');
+    }
+
+    public function adjustStock(Request $request, Inventory $inventory)
+    {
+        $request->validate([
+            'type' => 'required|in:in,out',
+            'qty' => 'required|numeric|min:0.01',
+            'notes' => 'nullable|string|max:255'
+        ]);
+
+        $qty = $request->qty;
+        
+        if ($request->type === 'in') {
+            $inventory->stock += $qty;
+        } else {
+            // Pastikan stok tidak minus
+            if ($inventory->stock < $qty) {
+                return redirect()->back()->with('error', 'Stok tidak cukup untuk dikurangi!');
+            }
+            $inventory->stock -= $qty;
+        }
+
+        $inventory->save();
+
+        \App\Models\InventoryLog::create([
+            'inventory_id' => $inventory->id,
+            'type' => $request->type,
+            'qty' => $qty,
+            'notes' => $request->notes ?? 'Penyesuaian manual',
+            'user_name' => auth()->user()->name ?? 'System',
+        ]);
+
+        return redirect()->back()->with('success', 'Stok bahan baku berhasil disesuaikan!');
     }
 
     public function update(UpdateInventoryRequest $request, Inventory $inventory)

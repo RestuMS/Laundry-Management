@@ -103,7 +103,6 @@ class DashboardController extends Controller
                                ->where('payment_status', 'Lunas')
                                ->sum('total_price');
 
-        // Kalkulasi Persentase Pertumbuhan
         $omsetGrowth = 0;
         if ($omsetBulanLalu > 0) {
             $omsetGrowth = round((($omsetBulanIni - $omsetBulanLalu) / $omsetBulanLalu) * 100, 1);
@@ -119,17 +118,16 @@ class DashboardController extends Controller
         $totalOrderHariIni = Order::whereDate('created_at', $today)->count();
         $firstOrderDate = Order::min('created_at');
         $daysSinceFirstOrder = max(1, $firstOrderDate ? Carbon::now()->diffInDays($firstOrderDate) + 1 : 1);
-        // avoid divide by zero if DB is empty sometimes diffInDays is weird, max(1, ...)
         $rataRataOrderHarian = Order::count() / $daysSinceFirstOrder;
         $diffOrderHarian = $totalOrderHariIni - round($rataRataOrderHarian);
 
-        // 4. Ranking Layanan Terlaris (Revenue)
-        $topServices = tap(OrderItem::selectRaw('order_items.service_name, sum(order_items.subtotal) as total_revenue')
+        // 4. Ranking Layanan Terlaris
+        $topServices = tap(OrderItem::selectRaw('order_items.service_name, sum(order_items.subtotal) as total_revenue, count(*) as total_orders')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('orders.payment_status', 'Lunas')
             ->groupBy('order_items.service_name')
             ->orderByDesc('total_revenue')
-            ->take(4)
+            ->take(5)
             ->get(), function($list) {
                 $totalAll = $list->sum('total_revenue') ?: 1;
                 $list->each(function($item) use ($totalAll) {
@@ -142,34 +140,68 @@ class DashboardController extends Controller
             ->where('payment_status', 'Lunas')
             ->groupBy('customer_name', 'customer_phone')
             ->orderByDesc('total_spend')
-            ->take(3)
+            ->take(5)
             ->get();
 
-        // 6. Chart Area: Performa Pencapaian
+        // 6. Grafik Revenue 12 Bulan (Monthly)
+        $monthlyLabels = collect();
+        $monthlyRevenues = collect();
+        $monthlyOrders = collect();
+        for ($i = 11; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $monthlyLabels->push($month->locale('id')->isoFormat('MMM YY'));
+            $revenue = Order::whereYear('created_at', $month->year)
+                            ->whereMonth('created_at', $month->month)
+                            ->where('payment_status', 'Lunas')
+                            ->sum('total_price');
+            $monthlyRevenues->push(round($revenue / 1000, 0)); // in thousands
+            $monthlyOrders->push(
+                Order::whereYear('created_at', $month->year)
+                     ->whereMonth('created_at', $month->month)
+                     ->count()
+            );
+        }
+
+        // 7. Grafik Harian 7 Hari (Weekly)
         $weeklyDates = collect();
         $weeklyRevenues = collect();
-        
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $weeklyDates->push($date->format('d M'));
-            // Daily mock for Branch 1 just mapped to real data
             $sum = Order::whereDate('created_at', $date)
                         ->where('payment_status', 'Lunas')
                         ->sum('total_price');
-            $weeklyRevenues->push(round($sum / 1000000, 2)); // in millions
+            $weeklyRevenues->push(round($sum / 1000000, 2));
         }
 
+        // 8. Rating Statistics
+        $avgRating = \App\Models\OrderRating::avg('rating') ?? 0;
+        $totalRatings = \App\Models\OrderRating::count();
+        $ratingDistribution = \App\Models\OrderRating::selectRaw('rating, count(*) as total')
+            ->groupBy('rating')
+            ->orderByDesc('rating')
+            ->get()
+            ->keyBy('rating');
+
+        // 9. Ulasan Terbaru
+        $recentReviews = \App\Models\OrderRating::with('order')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        // 10. Total Order Selesai & Pending
+        $totalSelesai = Order::where('status', 'Diambil')->count();
+        $totalPending = Order::whereNotIn('status', ['Selesai', 'Diambil'])->count();
+
         return view('dashboard.owner', compact(
-            'omsetBulanIni',
-            'omsetGrowth',
-            'totalPelanggan',
-            'pelangganBaruBulanIni',
-            'totalOrderHariIni',
-            'diffOrderHarian',
-            'topServices',
-            'topCustomers',
-            'weeklyDates',
-            'weeklyRevenues'
+            'omsetBulanIni', 'omsetGrowth',
+            'totalPelanggan', 'pelangganBaruBulanIni',
+            'totalOrderHariIni', 'diffOrderHarian',
+            'topServices', 'topCustomers',
+            'weeklyDates', 'weeklyRevenues',
+            'monthlyLabels', 'monthlyRevenues', 'monthlyOrders',
+            'avgRating', 'totalRatings', 'ratingDistribution', 'recentReviews',
+            'totalSelesai', 'totalPending'
         ));
     }
 }

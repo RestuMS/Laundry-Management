@@ -146,6 +146,11 @@ td {
                                             Manual
                                         </span>
                                         @endif
+                                        @if($order->requested_pickup_date)
+                                        <span class="text-[10.5px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1" title="Jadwal Antar yang Dipilih Pelanggan">
+                                            <i class="ph-fill ph-calendar-check"></i> {{ \Carbon\Carbon::parse($order->requested_pickup_date)->format('d M') }}
+                                        </span>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -350,6 +355,11 @@ td {
                             @if($order->order_source === 'online')
                             <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5">
                                 <i class="ph ph-globe text-[10px]"></i> Online
+                            </span>
+                            @endif
+                            @if($order->requested_pickup_date)
+                            <span class="text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5" title="Jadwal Antar">
+                                <i class="ph-fill ph-calendar-check text-[10px]"></i> {{ \Carbon\Carbon::parse($order->requested_pickup_date)->format('d/m') }}
                             </span>
                             @endif
                         </div>

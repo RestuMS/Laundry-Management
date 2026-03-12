@@ -149,46 +149,86 @@
             </button>
         </div>
         
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+        <!-- Desktop Table View -->
+        <div class="hidden md:block overflow-x-auto pb-2 -mx-2 md:mx-0 px-2 md:px-0">
+            <table class="w-full min-w-[600px] text-left border-collapse">
                 <thead>
-                    <tr class="text-[13px] font-semibold text-slate-400 border-b border-white/60">
-                        <th class="pb-3 px-2 font-medium">Nama</th>
-                        <th class="pb-3 px-2 font-medium">Layanan</th>
-                        <th class="pb-3 px-2 font-medium">Status</th>
-                        <th class="pb-3 px-2 font-medium text-right">Total</th>
+                    <tr class="text-[13px] font-semibold text-slate-400 border-b border-black/5">
+                        <th class="pb-3 px-3 font-medium">Pelanggan</th>
+                        <th class="pb-3 px-3 font-medium">Layanan</th>
+                        <th class="pb-3 px-3 font-medium">Status</th>
+                        <th class="pb-3 px-3 font-medium text-right">Total</th>
                     </tr>
                 </thead>
                 <tbody class="text-[14px] font-semibold text-slate-700">
                     @forelse($recentOrders as $ro)
-                    <tr class="border-b border-white/60 hover:bg-white/40 transition-colors group">
-                        <td class="py-3.5 px-2 flex items-center gap-3">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode($ro->customer_name) }}&background=EAF4FF&color=5B8DEF&rounded=true" alt="Avatar" class="w-8 h-8 rounded-full shadow-sm border border-white">
+                    <tr class="border-b border-black/5 hover:bg-white/50 transition-colors group">
+                        <td class="py-3.5 px-3 flex items-center gap-3 whitespace-nowrap">
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($ro->customer_name) }}&background=EAF4FF&color=5B8DEF&rounded=true" alt="Avatar" class="w-8 h-8 rounded-full shadow-sm border border-white shrink-0">
                             {{ $ro->customer_name }}
                         </td>
-                        <td class="py-3.5 px-2 text-slate-500 font-medium">
-                            {{ $ro->items->count() > 0 ? $ro->items->pluck('service_name')->join(', ') : $ro->service_name }}
+                        <td class="py-3.5 px-3 text-slate-500 font-medium">
+                            <div class="truncate max-w-[200px]" title="{{ $ro->items->count() > 0 ? $ro->items->pluck('service_name')->join(', ') : $ro->service_name }}">
+                                {{ $ro->items->count() > 0 ? $ro->items->pluck('service_name')->join(', ') : $ro->service_name }}
+                            </div>
                         </td>
-                        <td class="py-3.5 px-2">
+                        <td class="py-3.5 px-3 whitespace-nowrap">
                             @if($ro->status == 'Selesai' || $ro->status == 'Diambil')
-                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#59C98C]/10 text-[#59C98C] border border-[#59C98C]/20">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-bold bg-[#59C98C]/15 text-[#59C98C] border border-[#59C98C]/30 shadow-sm">
                                 Selesai
                             </span>
                             @else
-                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#FFB84D]/10 text-[#FFB84D] border border-[#FFB84D]/20">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-bold bg-[#FFB84D]/15 text-[#FFB84D] border border-[#FFB84D]/30 shadow-sm">
                                 Diproses
                             </span>
                             @endif
                         </td>
-                        <td class="py-3.5 px-2 text-right">Rp {{ number_format($ro->total_price, 0, ',', '.') }}</td>
+                        <td class="py-3.5 px-3 text-right whitespace-nowrap font-bold text-slate-600">Rp {{ number_format($ro->total_price, 0, ',', '.') }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="py-4 text-center text-slate-400">Belum ada pesanan terbaru.</td>
+                        <td colspan="4" class="py-8 text-center text-slate-400 font-medium bg-white/30 rounded-xl mt-2">Belum ada pesanan terbaru.</td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        <!-- Mobile Stacked Card View -->
+        <div class="md:hidden flex flex-col gap-3 mt-2">
+            @forelse($recentOrders as $ro)
+            <div class="bg-white/50 p-4 rounded-[16px] border border-black/5 shadow-sm">
+                <div class="flex items-center justify-between mb-3 border-b border-black/5 pb-3">
+                    <div class="flex items-center gap-3">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode($ro->customer_name) }}&background=EAF4FF&color=5B8DEF&rounded=true" alt="Avatar" class="w-9 h-9 rounded-full shadow-sm border border-white shrink-0">
+                        <span class="font-bold text-slate-700 text-[14.5px] leading-tight">{{ $ro->customer_name }}</span>
+                    </div>
+                    @if($ro->status == 'Selesai' || $ro->status == 'Diambil')
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#59C98C]/15 text-[#59C98C] border border-[#59C98C]/30 shadow-sm shrink-0">
+                        Selesai
+                    </span>
+                    @else
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#FFB84D]/15 text-[#FFB84D] border border-[#FFB84D]/30 shadow-sm shrink-0">
+                        Diproses
+                    </span>
+                    @endif
+                </div>
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-slate-400 mb-0.5 tracking-wider">Layanan</p>
+                        <p class="text-[13.5px] text-slate-600 font-semibold leading-snug break-words pr-2">
+                            {{ $ro->items->count() > 0 ? $ro->items->pluck('service_name')->join(', ') : ($ro->service_name ?? 'Layanan') }}
+                        </p>
+                    </div>
+                    <div class="text-right shrink-0 pl-3">
+                        <p class="text-[10px] uppercase font-bold text-slate-400 mb-0.5 tracking-wider">Total</p>
+                        <p class="text-[15px] font-black text-[#5B8DEF]">Rp {{ number_format($ro->total_price, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+            </div>
+            @empty
+            <div class="py-6 text-center text-slate-400 font-medium bg-white/30 rounded-xl">Belum ada pesanan terbaru.</div>
+            @endforelse
         </div>
         
         <!-- Pagination mockup -->

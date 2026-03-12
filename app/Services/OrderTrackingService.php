@@ -26,12 +26,17 @@ class OrderTrackingService
         $statusTimeline = [];
         $history = $order->status_history ?? [];
 
+        $currentStatusIndex = array_search($order->status, Order::STATUSES) !== false 
+            ? array_search($order->status, Order::STATUSES) 
+            : 0;
+
         foreach (Order::STATUSES as $index => $status) {
             $historyEntry = collect($history)->where('status', $status)->last();
+            $isCompleted = $historyEntry !== null || $index <= $currentStatusIndex;
 
             $statusTimeline[] = [
                 'status' => $status,
-                'completed' => $historyEntry !== null,
+                'completed' => $isCompleted,
                 'timestamp' => $historyEntry['changed_at'] ?? null,
                 'changed_by' => $historyEntry['changed_by'] ?? null,
             ];
@@ -60,6 +65,10 @@ class OrderTrackingService
             'weight' => $order->items->count() > 0 ? $order->items->sum('qty') : $order->weight,
             'status' => $order->status,
             'total_price' => $order->total_price,
+            'grand_total' => $order->grand_total,
+            'total_paid' => $order->total_paid,
+            'remaining_balance' => $order->remaining_balance,
+            'snap_token' => $order->snap_token,
             'payment_status' => $order->payment_status,
             'created_at' => $order->created_at->format('d M Y, H:i'),
             'estimated_finish' => $estimatedFinishFormatted,
@@ -75,6 +84,17 @@ class OrderTrackingService
                 'type_label' => $p->type_label,
                 'created_at' => $p->created_at->format('d M Y, H:i'),
             ])->groupBy('type'),
+            'complaints' => $order->complaints->map(fn($c) => [
+                'status' => $c->status,
+                'description' => $c->description,
+                'resolution_notes' => $c->resolution_notes,
+                'created_at' => $c->created_at->format('d M Y, H:i'),
+            ])->values(),
+            'has_rated' => $order->rating !== null,
+            'rating'    => $order->rating ? [
+                'stars'   => $order->rating->rating,
+                'comment' => $order->rating->comment,
+            ] : null,
         ];
     }
 }

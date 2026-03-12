@@ -9,6 +9,7 @@ use App\Models\OrderPhoto;
 use App\Models\Service;
 use App\Models\Customer;
 use App\Models\Inventory;
+use App\Models\InventoryLog;
 use App\Services\WhatsappNotificationService;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
@@ -106,8 +107,17 @@ class OrderController extends Controller
             // Deduct inventory dynamically based on qty
             $inventories = Inventory::where('usage_per_kg', '>', 0)->get();
             foreach ($inventories as $inv) {
-                $inv->stock = max(0, $inv->stock - ($inv->usage_per_kg * $item['qty']));
+                $deduct = $inv->usage_per_kg * $item['qty'];
+                $inv->stock = max(0, $inv->stock - $deduct);
                 $inv->save();
+
+                InventoryLog::create([
+                    'inventory_id' => $inv->id,
+                    'type' => 'out',
+                    'qty' => $deduct,
+                    'notes' => "Penggunaan otomatis dari Order: {$order->order_code}",
+                    'user_name' => auth()->user()->name ?? 'System',
+                ]);
             }
         }
 
@@ -128,8 +138,17 @@ class OrderController extends Controller
         foreach ($order->items as $oldItem) {
             $inventories = Inventory::where('usage_per_kg', '>', 0)->get();
             foreach ($inventories as $inv) {
-                $inv->stock = $inv->stock + ($inv->usage_per_kg * $oldItem->qty);
+                $added = $inv->usage_per_kg * $oldItem->qty;
+                $inv->stock = $inv->stock + $added;
                 $inv->save();
+
+                InventoryLog::create([
+                    'inventory_id' => $inv->id,
+                    'type' => 'in',
+                    'qty' => $added,
+                    'notes' => "Pengembalian otomatis (edit order): {$order->order_code}",
+                    'user_name' => auth()->user()->name ?? 'System',
+                ]);
             }
         }
 
@@ -150,9 +169,17 @@ class OrderController extends Controller
             // Deduct inventory dynamically based on qty baru
             $inventories = Inventory::where('usage_per_kg', '>', 0)->get();
             foreach ($inventories as $inv) {
-                // Minimum stock is 0 (tidak minus)
-                $inv->stock = max(0, $inv->stock - ($inv->usage_per_kg * $item['qty']));
+                $deduct = $inv->usage_per_kg * $item['qty'];
+                $inv->stock = max(0, $inv->stock - $deduct);
                 $inv->save();
+
+                InventoryLog::create([
+                    'inventory_id' => $inv->id,
+                    'type' => 'out',
+                    'qty' => $deduct,
+                    'notes' => "Penggunaan otomatis (edit order): {$order->order_code}",
+                    'user_name' => auth()->user()->name ?? 'System',
+                ]);
             }
         }
 

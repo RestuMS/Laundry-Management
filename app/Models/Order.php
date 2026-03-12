@@ -13,6 +13,8 @@ class Order extends Model
     protected $fillable = [
         'order_code',
         'order_source',
+        'booking_slot_id',
+        'requested_pickup_date',
         'customer_id',
         'customer_name',
         'customer_phone',
@@ -28,6 +30,7 @@ class Order extends Model
         'tax',
         'payment_method',
         'payment_status',
+        'snap_token',
         'notes',
     ];
 
@@ -35,6 +38,7 @@ class Order extends Model
         'status_history' => 'array',
         'estimated_finish' => 'datetime',
         'status_updated_at' => 'datetime',
+        'requested_pickup_date' => 'date',
     ];
 
     /**
@@ -91,6 +95,11 @@ class Order extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function bookingSlot()
+    {
+        return $this->belongsTo(BookingSlot::class);
+    }
+
     public function items()
     {
         return $this->hasMany(OrderItem::class);
@@ -114,6 +123,11 @@ class Order extends Model
     public function complaints()
     {
         return $this->hasMany(Complaint::class);
+    }
+
+    public function rating()
+    {
+        return $this->hasOne(OrderRating::class);
     }
 
     /**
